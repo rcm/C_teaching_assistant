@@ -1,12 +1,23 @@
 #!/usr/bin/python3
 
-
-"""
-camelCase
-snake_case
-"""
-
 import sys, subprocess, glob, tempfile, os, json, re
+
+def get_identifier_type(identifier):
+    """
+    This function tries to parse the identifier and sepparate it by words.
+    It returns the kind of identifier and the words if it found any
+    """
+    possibilities = {
+            'camelCase'     : [r'([a-z][a-z0-9]*)?([A-Z][a-z0-9]*)+', lambda s: [m.lower() for m in re.split('([A-Z][a-z]*)', s) if m]],
+            'snake_case'    : [r'([a-z][a-z0-9]*(_[a-z0-9]+)+|[A-Z][A-Z0-9]*(_[A-Z0-9]+)+)', lambda s: [m.lower() for m in re.split('_|([0-9]+)', s) if m]],
+            'simple'        : [r'([A-Z][A-Z0-9]*|[a-z][a-z0-9]*)', lambda s: s],
+            }
+    result = [p for p in possibilities if re.fullmatch(possibilities[p][0], identifier)]
+    if len(result) == 2:
+        return "simple", [identifier]
+    if len(result) == 1:
+        return result[0], possibilities[result[0]][1](identifier)
+    return 'mixed', [identifier]
 
 def create_function_files(filename, functions, folder):
     info = {}
