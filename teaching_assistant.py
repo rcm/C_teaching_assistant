@@ -1,5 +1,13 @@
 #!/usr/bin/python3
 
+
+"""
+Todo:
+O pipeline
+Ir buscar os comentários corretos
+
+"""
+
 import sys, subprocess, glob, tempfile, os, json, re
 
 def get_identifier_type(identifier):
@@ -19,13 +27,31 @@ def get_identifier_type(identifier):
         return result[0], possibilities[result[0]][1](identifier)
     return 'mixed', [identifier]
 
+def get_comment_before(filename, lineno):
+    with open(filename) as F:
+        lines = F.readlines()
+    if lineno > 1:
+        fun_def = lines[lineno - 1]
+        before = lines[:lineno - 1]
+        before = "".join(before)
+        print(
+                re.search(r'/\*.*?\*/\s*\Z', before, re.MULTILINE | re.DOTALL)
+                )
+
+def create_function(filename, line1, line2, function_filename):
+    get_comment_before(filename, line1)
+    with open(filename) as F:
+        lines = F.readlines()
+    with open(function_filename, "w") as F:
+        print(*lines[line1 - 1 : line2 + 1], sep = "", file = F)
+
 def create_function_files(filename, functions, folder):
     info = {}
     for fun, line1, line2 in functions:
-        num_lines = int(line2) - int(line1)
+        line1, line2 = [int(x) for x  in [line1, line2]]
         name = filename.replace("/","_")
         function_filename = f"{folder}/{name}_{fun}.c"
-        os.system(f"tail +{line1} {filename} | head -{num_lines} > {function_filename}")
+        create_function(filename, line1, line2, function_filename)
         info[fun] = filename, function_filename
     return info
 
@@ -101,6 +127,25 @@ def extract_all_functions(code):
         for fun in info:
             info[fun]["stats"] = function_stats[info[fun]["function_filename"]]
     return info
+
+def function_query(info, grep = None, transform = None):
+    def create_function(info, s):
+        def stringify(x):
+            if type(x) is str:
+                return f'"{x}"'
+            return str(x)
+        poss = {**{M : (lambda M: lambda F: info.get(F)['stats'][M])(M) for M in info['main']['stats']}, **{K : lambda F: info[F][K] for K in "return args".split()}}
+        return lambda F: eval(''.join([stringify(poss[m](F)) if m in poss else m for m in re.split(r'(\w+)', s) if m]))
+
+    if grep is None:
+        grep = lambda x: True
+    if transform is None:
+        transform = lambda x: info[x]
+    if type(grep) is str:
+        grep = create_function(info, grep)
+    if type(transform) is str:
+        transform = create_function(info, transform)
+    return {Fun : transform(Fun) for Fun, v in info.items() if grep(Fun)}
 
 code=sys.argv[1]
 info = extract_all_functions(code)
