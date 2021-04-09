@@ -51,8 +51,8 @@ Output:
 	SORT maintainability_index
 
 	SHOW name cyclomatic_complexity
-        COND cyclomatic_complexity > 0
-        SORT -maintainability_index name
+	COND cyclomatic_complexity > 0
+	SORT -maintainability_index name
 
 	SHOW name cyclomatic_complexity halstead_bugprop maintainability_index
 	COLOR cyclomatic_complexity : cyclomatic_complexity < 3, maintainability_index : maintainability_index > 80
