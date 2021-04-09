@@ -47,7 +47,7 @@ Output:
 	COND cyclomatic_complexity > 10
 
 	SHOW name cyclomatic_complexity
-        COND cyclomatic_complexity > 0
+	COND cyclomatic_complexity > 0
 	SORT maintainability_index
 
 	SHOW name cyclomatic_complexity
