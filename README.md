@@ -27,3 +27,10 @@ The last example with output
 	>>> query(info, transform = '[name, list(args.keys()), re.findall(r"@param\s+(\S+)", comment, re.M)]', grep = 'set(args.keys()) != set(re.findall(r"@param\s+(\S+)", comment, re.M))')
 	[['parse', ['line'], ['strtok', 'sobra', 'strtol']], ['main', [], ['BUFSIZ']], ['soma', ['s'], []], ['subtrai', ['s'], []], ['multiplica', ['s'], []], ['dividir', ['s'], []], ['decrementa', ['s'], []], ['incrementa', ['s'], []], ['modulo', ['s'], []], ['expoente', ['s'], []], ['e', ['s'], []], ['ou', ['s'], []], ['xorr', ['s'], []], ['nott', ['s'], []], ['PUSH', ['s', 'valor'], ['valor']], ['POP', ['s'], []], ['PRINT_STACK', ['s'], []]]
 
+Names, arguments and documented arguments in cases where either an argument was not documented or something that was not an argument was documented as an argument
+
+	arg_doc_problems = lambda args, comment: set(args.keys()) != set(re.findall(r"@param\s+(\S+)", comment, re.M))
+	query(info, transform = '[name]', grep = "arg_doc_problems(args, comment)")
+
+Output:
+	['parse', 'main', 'soma', 'subtrai', 'multiplica', 'dividir', 'decrementa', 'incrementa', 'modulo', 'expoente', 'e', 'ou', 'xorr', 'nott', 'PUSH', 'POP', 'PRINT_STACK']
