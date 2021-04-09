@@ -57,6 +57,28 @@ Output:
 	SHOW name cyclomatic_complexity halstead_bugprop maintainability_index
 	COLOR cyclomatic_complexity : cyclomatic_complexity < 3, maintainability_index : maintainability_index > 80
 
+	name         cyclomatic_complexity      halstead_bugprop  maintainability_index
+	-----------  -----------------------  ------------------  -----------------------
+	parse        🟥 28                              0.604263   🟥 61.85078965844583
+	main         🟩 1                               0.0312551  🟩 100
+	soma         🟩 2                               0.0613119  🟩 100
+	subtrai      🟩 2                               0.0613119  🟩 100
+	multiplica   🟩 2                               0.06       🟩 100
+	dividir      🟩 1                               0.0763541  🟩 100
+	decrementa   🟩 2                               0.0517745  🟩 100
+	incrementa   🟩 2                               0.0517745  🟩 100
+	modulo       🟩 2                               0.0613119  🟩 100
+	expoente     🟩 2                               0.0653994  🟩 100
+	e            🟩 2                               0.0613119  🟩 100
+	ou           🟩 2                               0.0613119  🟩 100
+	xorr         🟩 2                               0.0613119  🟩 100
+	nott         🟩 2                               0.0325574  🟩 100
+	NEW_STACK    🟩 1                               0.0346667  🟩 100
+	PUSH         🟩 2                               0.0633883  🟩 100
+	POP          🟩 1                               0.0463246  🟩 100
+	PRINT_STACK  🟥 3                               0.0663456  🟩 100
+
+
 	SHOW name args documented(comment)
 	COND arg_doc_problems(args, comment)
 
