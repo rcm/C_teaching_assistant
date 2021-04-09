@@ -179,5 +179,8 @@ def function_query(info, grep = None, transform = None):
         transform = create_function(info, transform)
     return {Fun : transform(Fun) for Fun, v in info.items() if grep(Fun)}
 
+def query(info, grep = None, transform = None):
+    return list(function_query(info, grep = grep, transform = transform).values())
+
 code=sys.argv[1]
 info = extract_all_functions(code)
