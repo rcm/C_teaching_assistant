@@ -54,29 +54,32 @@ Output:
 	COND cyclomatic_complexity > 0
 	SORT -maintainability_index name
 
-	SHOW name cyclomatic_complexity halstead_bugprop maintainability_index
-	COLOR cyclomatic_complexity : cyclomatic_complexity < 3, maintainability_index : maintainability_index > 80
+	SHOW name cyclomatic_complexity
+		halstead_bugprop maintainability_index
+	COLOR cyclomatic_complexity : cyclomatic_complexity < 3,
+		maintainability_index : maintainability_index > 80,
+		halstead_bugprop : halstead_bugprop < 0.05
 
-	name         cyclomatic_complexity      halstead_bugprop  maintainability_index
-	-----------  -----------------------  ------------------  -----------------------
-	parse        🟥 28                              0.604263   🟥 61.85078965844583
-	main         🟩 1                               0.0312551  🟩 100
-	soma         🟩 2                               0.0613119  🟩 100
-	subtrai      🟩 2                               0.0613119  🟩 100
-	multiplica   🟩 2                               0.06       🟩 100
-	dividir      🟩 1                               0.0763541  🟩 100
-	decrementa   🟩 2                               0.0517745  🟩 100
-	incrementa   🟩 2                               0.0517745  🟩 100
-	modulo       🟩 2                               0.0613119  🟩 100
-	expoente     🟩 2                               0.0653994  🟩 100
-	e            🟩 2                               0.0613119  🟩 100
-	ou           🟩 2                               0.0613119  🟩 100
-	xorr         🟩 2                               0.0613119  🟩 100
-	nott         🟩 2                               0.0325574  🟩 100
-	NEW_STACK    🟩 1                               0.0346667  🟩 100
-	PUSH         🟩 2                               0.0633883  🟩 100
-	POP          🟩 1                               0.0463246  🟩 100
-	PRINT_STACK  🟥 3                               0.0663456  🟩 100
+	>>> name         cyclomatic_complexity    halstead_bugprop        maintainability_index
+	-----------  -----------------------  ----------------------  -----------------------
+	parse        🟥 28                     🟥 0.6042631877271641    🟥 61.85078965844583
+	main         🟩 1                      🟩 0.03125512476486815   🟩 100
+	soma         🟩 2                      🟥 0.06131194261875509   🟩 100
+	subtrai      🟩 2                      🟥 0.06131194261875509   🟩 100
+	multiplica   🟩 2                      🟥 0.06                  🟩 100
+	dividir      🟩 1                      🟥 0.07635406300967673   🟩 100
+	decrementa   🟩 2                      🟥 0.051774529322504294  🟩 100
+	incrementa   🟩 2                      🟥 0.051774529322504294  🟩 100
+	modulo       🟩 2                      🟥 0.06131194261875509   🟩 100
+	expoente     🟩 2                      🟥 0.06539940546000543   🟩 100
+	e            🟩 2                      🟥 0.06131194261875509   🟩 100
+	ou           🟩 2                      🟥 0.06131194261875509   🟩 100
+	xorr         🟩 2                      🟥 0.06131194261875509   🟩 100
+	nott         🟩 2                      🟩 0.03255742163007099   🟩 100
+	NEW_STACK    🟩 1                      🟩 0.034666666666666665  🟩 100
+	PUSH         🟩 2                      🟥 0.06338827872501465   🟩 100
+	POP          🟩 1                      🟩 0.046324578867503845  🟩 100
+	PRINT_STACK  🟥 3                      🟥 0.06634557535550285   🟩 100
 
 
 	SHOW name args documented(comment)
