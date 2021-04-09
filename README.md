@@ -60,7 +60,7 @@ Output:
 		maintainability_index : maintainability_index > 80,
 		halstead_bugprop : halstead_bugprop < 0.05
 
-	>>> name         cyclomatic_complexity    halstead_bugprop        maintainability_index
+	name         cyclomatic_complexity    halstead_bugprop        maintainability_index
 	-----------  -----------------------  ----------------------  -----------------------
 	parse        🟥 28                     🟥 0.6042631877271641    🟥 61.85078965844583
 	main         🟩 1                      🟩 0.03125512476486815   🟩 100
