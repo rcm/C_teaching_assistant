@@ -4,11 +4,12 @@
 
 Names of functions without comments
 
-	query(info, transform = "name", grep = "len(comment) == 0")
+	query(info, transform = "name", grep = "not comment")
 
 Names and comments of functions that return void and whose documentation has a @returns keyword
 
 	query(info, transform = "[name, comment]", grep = "len(comment) > 0 and return == 'void' and '@returns' in comment")
+	query(info, transform = "[name, comment]", grep = "comment and return == 'void' and '@returns' in comment")
 
 Names and cyclometric complexity of the functions whose cyclomatic_complexity is above 10
 
