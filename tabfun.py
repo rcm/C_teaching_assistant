@@ -1,7 +1,16 @@
 #!/usr/bin/python3
 import tabulate
 
+"""
+    3 vermelho
+    2 laranja
+    1 amarelo
+    0 verde
+    -1 azul
+"""
 cores = { 3:'🟥', 2:'🟧', 1:'🟨', 0:'🟩', -1:'🟦'} ## 🟪🟫
+
+RED, ORANGE, YELLOW, GREEN, BLUE = [cores[c] for c in sorted(cores.keys(), reverse = True)]
 
 ### aval. baseada em tabelas de intervalos→cor
 def interv(inttab,v): 
@@ -14,14 +23,19 @@ def interv(inttab,v):
 def dictab(tab,v): 
    return cores[tab.get(v,-1)]
 
-def tabfun(t,funaval,fmt="simple"):
+def tabfun(t,funaval = None,fmt="simple"):
+   if funaval is None:
+       funaval = {}
    r = [ t[0] ]
    for tup in t[1:]:
       aux = tup.copy()
       for f,fun in funaval.items():
-          aux[f] = f"{fun(aux[f])} {aux[f]}"
+          res = fun(aux[f])
+          if type(res) is bool:
+              res = GREEN if res else RED
+          aux[f] = f"{res} {aux[f]}"
       r.append(aux)
-   print(tabulate.tabulate(r,headers="firstrow",tablefmt=fmt))
+   return tabulate.tabulate(r,headers="firstrow",tablefmt=fmt)
 
 
 ### Exemplo

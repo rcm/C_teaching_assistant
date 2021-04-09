@@ -9,6 +9,7 @@ Ir buscar os comentários corretos
 """
 
 import sys, subprocess, glob, tempfile, os, json, re
+import tabfun
 
 def get_identifier_type(identifier):
     """
@@ -159,7 +160,7 @@ def extract_all_functions(code):
             info[fun]["stats"] = function_stats[info[fun]["function_filename"]]
     return info
 
-def function_query(info, grep = None, transform = None):
+def function_query(info, grep = None, transform = None, sort = None):
     def create_function(info, s):
         def stringify(x):
             if type(x) is str:
@@ -176,11 +177,90 @@ def function_query(info, grep = None, transform = None):
     if type(grep) is str:
         grep = create_function(info, grep)
     if type(transform) is str:
+        header = transform.replace("[","").replace("]","").split(",")
         transform = create_function(info, transform)
-    return {Fun : transform(Fun) for Fun, v in info.items() if grep(Fun)}
+    if type(sort) is str:
+        sort = create_function(info, sort)
 
-def query(info, grep = None, transform = None):
-    return list(function_query(info, grep = grep, transform = transform).values())
+    if sort is not None:
+        return [header] + [x[1] for x in sorted(((Fun, transform(Fun)) for Fun, v in info.items() if grep(Fun)), key = lambda x: sort(x[0]))]
+
+    return [header] + [transform(Fun) for Fun, v in info.items() if grep(Fun)]
+
+def query(info, lines = None):
+    """
+    Performs a query
+
+    Parameters
+    ----------
+    info
+        The dictionary containing all the info
+    lines
+        This can be a:
+            None        reads from stdin
+            str         should be all the input, splits into lines
+            List[str]   list with all the lines in the query
+    """
+    keywords = { 'COND' : 'grep', 'SHOW' : 'transform', 'SORT' : 'sort', 'COLOR' : 'color'}
+    if lines is None:
+        lines = sys.stdin
+    elif type(lines) is str:
+        lines = lines.splitlines()
+
+    def parser(keywords):
+        dic = {}
+        current_keyword = None
+        current_str = ""
+        def parse(L):
+            nonlocal dic
+            nonlocal current_keyword
+            nonlocal current_str
+            if not L.strip():
+                if current_keyword is not None:
+                    dic[keywords[current_keyword]] = current_str
+                return dic
+            keyword, *rest = L.split()
+            if keyword == "END":
+                if current_keyword is not None:
+                    dic[keywords[current_keyword]] = current_str
+            elif keyword in keywords:
+                if current_keyword is not None:
+                    dic[keywords[current_keyword]] = current_str
+                current_keyword = keyword
+                current_str = ' '.join(rest)
+            else:
+                current_str += L
+            return dic
+        return parse
+
+    parse = parser(keywords)
+    for L in lines:
+        if not L.strip():
+            parse(L)
+            break
+        parse(L)
+    dic = parse("")
+    color_fun = None
+    if "transform" in dic and type(dic["transform"]) is str:
+        header = dic['transform'].split()
+        dic["transform"] = f"[{','.join(dic['transform'].split())}]"
+    if "sort" in dic and type(dic["sort"]) is str:
+        dic["sort"] = f"[{','.join(dic['sort'].split())}]"
+    if "color" in dic and type(dic["color"]) is str:
+        color_fun = {header.index(K) : eval(f"lambda {K}: {V}") for K, V in [[k.strip() for k in x.split(":")] for x in dic["color"].split(",")]}
+        del dic["color"]
+
+    if dic:
+        return tabfun.tabfun(function_query(info, **dic), color_fun)
 
 code=sys.argv[1]
+arg_doc_problems = lambda args, comment: set(args.keys()) != set(re.findall(r"@param\s+(\S+)", comment, re.M))
+documented = lambda comment: re.findall(r"@param\s+(\S+)", comment, re.M)
 info = extract_all_functions(code)
+
+while True:
+    print(">>> ", end = "")
+    result = query(info)
+    if result is None:
+        break
+    print(result)
