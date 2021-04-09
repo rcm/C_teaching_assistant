@@ -27,23 +27,53 @@ def get_identifier_type(identifier):
         return result[0], possibilities[result[0]][1](identifier)
     return 'mixed', [identifier]
 
+def get_last_contiguous_match(matches):
+    m = matches.pop()
+    rbeg, rend = m.span()
+    result = m.group()
+    while matches:
+        m = matches.pop()
+        beg, end = m.span()
+        if end + 1 != rbeg: break
+        rbeg = beg
+        result = m.group() + result
+    return result, rbeg, rend
+
 def get_comment_before(filename, lineno):
+    comment = ""
     with open(filename) as F:
         lines = F.readlines()
     if lineno > 1:
         fun_def = lines[lineno - 1]
-        before = lines[:lineno - 1]
+        before = lines[:lineno]
         before = "".join(before)
-        print(
-                re.search(r'/\*.*?\*/\s*\Z', before, re.MULTILINE | re.DOTALL)
+        matches = sorted(
+                [m for m in re.finditer(r'/\*.*?\*/', before, re.MULTILINE | re.DOTALL)] + [m for m in re.finditer(r'^\s*//.*$', before, re.MULTILINE)],
+                key = lambda x: x.span()
                 )
 
-def create_function(filename, line1, line2, function_filename):
-    get_comment_before(filename, line1)
+        if matches:
+            last_comment, comment_begin, comment_end = get_last_contiguous_match(matches)
+            function_begin, function_end = re.search(re.escape(fun_def), before).span()
+
+            if comment_end + 1 != function_begin:
+                space = before[comment_end + 1: function_begin]
+                if re.search(r'\S+', space):
+                    print(space)
+                else:
+                    comment = last_comment
+            else:
+                comment = last_comment
+    return comment
+
+
+def create_function(filename, fun, line1, line2, function_filename):
+    comment = get_comment_before(filename, line1)
     with open(filename) as F:
         lines = F.readlines()
     with open(function_filename, "w") as F:
         print(*lines[line1 - 1 : line2 + 1], sep = "", file = F)
+    return comment
 
 def create_function_files(filename, functions, folder):
     info = {}
@@ -51,8 +81,8 @@ def create_function_files(filename, functions, folder):
         line1, line2 = [int(x) for x  in [line1, line2]]
         name = filename.replace("/","_")
         function_filename = f"{folder}/{name}_{fun}.c"
-        create_function(filename, line1, line2, function_filename)
-        info[fun] = filename, function_filename
+        comment = create_function(filename, fun, line1, line2, function_filename)
+        info[fun] = filename, function_filename, comment
     return info
 
 def parse_prototype(proto):
@@ -76,8 +106,8 @@ def get_functions_from_file(filename, folder):
         if type == "function":
             return_type, args = parse_prototype(' '.join(rest))
             lines.append((identifier, lineno))
-            current_function = identifier
-            functions[current_function] = {}
+            current_function = (identifier, filename)
+            functions[current_function] = {'name' : identifier}
             functions[current_function]["vars"] = []
             functions[current_function]["return"] = return_type
             functions[current_function]["args"] = dict(args)
@@ -86,8 +116,9 @@ def get_functions_from_file(filename, folder):
     num_lines = subprocess.getoutput(f"wc -l '{filename}'").split()[0]
     lines.append(('___END___', num_lines))
     info = create_function_files(filename, [(F, L1, L2) for (F, L1), (_F, L2) in zip(lines[:-1], lines[1:])], folder)
-    for F in info:
-        functions[F]["filename"], functions[F]["function_filename"] = info[F]
+    for id in info:
+        F = (id, filename)
+        functions[F]["filename"], functions[F]["function_filename"], functions[F]["comment"] = info[id]
     return functions 
 
 def extract_all_functions(code):
@@ -132,9 +163,10 @@ def function_query(info, grep = None, transform = None):
     def create_function(info, s):
         def stringify(x):
             if type(x) is str:
-                return f'"{x}"'
+                return f'r"""{x}"""'
             return str(x)
-        poss = {**{M : (lambda M: lambda F: info.get(F)['stats'][M])(M) for M in info['main']['stats']}, **{K : lambda F: info[F][K] for K in "return args".split()}}
+        any_id = list(info.keys())[0]
+        poss = {**{M : (lambda M: lambda F: info.get(F)['stats'][M])(M) for M in info[any_id]['stats']}, **{K : (lambda K : lambda F: info[F][K])(K) for K in "name return args comment".split()}}
         return lambda F: eval(''.join([stringify(poss[m](F)) if m in poss else m for m in re.split(r'(\w+)', s) if m]))
 
     if grep is None:
