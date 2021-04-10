@@ -12,7 +12,7 @@ colors = { 3:'🟥', 2:'🟧', 1:'🟨', 0:'🟩', -1:'🟦'} ## 🟪🟫
 
 RED, ORANGE, YELLOW, GREEN, BLUE = [colors[c] for c in sorted(colors.keys(), reverse = True)]
 
-palette = lambda x: colors[int(x * 3)]
+palette = lambda x: colors[int(3 - x * 3)]
 
 ### aval. baseada em tabelas de intervalos→cor
 def interv(inttab,v): 
@@ -35,7 +35,7 @@ def tabfun(t,funaval = None,fmt="simple"):
           res = fun(aux[f])
           if type(res) is bool:
               res = GREEN if res else RED
-          if res == 0 or type(res) is float:
+          if type(res) is float or type(res) is int and 0 <= res <= 1:
               res = palette(res)
           aux[f] = f"{res} {aux[f]}"
       r.append(aux)
