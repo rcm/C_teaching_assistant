@@ -18,7 +18,6 @@ Names and cyclometric complexity of the functions whose cyclomatic_complexity is
 Names and cyclometric complexity of the functions whose maintainability_index is below 80
 
 	function_query(info, transform = "[name, cyclomatic_complexity]", grep = "maintainability_index < 80")
-	tabfun.tabfun(["name cyclo maint".split()]  + function_query(info, transform = '[name, cyclomatic_complexity, maintainability_index]'), {1 : lambda x : tabfun.RED if x > 5 else tabfun.GREEN, 2 : lambda x: tabfun.RED if x < 80 else tabfun.GREEN})
 
 Names, arguments and documented arguments in cases where either an argument was not documented or something that was not an argument was documented as an argument
 
@@ -122,10 +121,8 @@ Names, arguments and documented arguments in cases where either an argument was 
 
 # Using the query system on other scripts
 
-	from teaching_assistant import *
-	info = extract_all_functions("/home/rui/repos/PL2G01")
-	result = query(info, """SHOW name return args
-	SORT name""")
-	print(result)
-
+	>>> from teaching_assistant import *
+	>>> info = extract_all_functions("/home/rui/repos/LCCPL2G01")
+	>>> function_query(info, transform = '[name]', grep = "arg_doc_problems(args, comment)")
+	[['name'], ['parse'], ['main'], ['soma'], ['subtrai'], ['multiplica'], ['dividir'], ['decrementa'], ['incrementa'], ['modulo'], ['expoente'], ['e'], ['ou'], ['xorr'], ['nott'], ['PUSH'], ['POP'], ['PRINT_STACK']]
 

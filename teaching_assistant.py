@@ -10,6 +10,7 @@ Ir buscar os comentários corretos
 
 import sys, subprocess, glob, tempfile, os, json, re
 import tabfun
+from utilities import *
 
 def get_identifier_type(identifier):
     """
@@ -263,7 +264,6 @@ def query(info, lines = None):
 if __name__ == "__main__":
 	code=sys.argv[1]
 	info = extract_all_functions(code)
-	from utilities import *
 	
 	while True:
 	    print("\nInsert query:")

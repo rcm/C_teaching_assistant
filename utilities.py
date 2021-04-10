@@ -1,4 +1,4 @@
-import tabfun
+import tabfun, re
 trim = lambda x: 1 if x > 1 else 0 if x < 0 else x
 scale_upper = lambda L, U: lambda x: trim((x - L) / (U - L))
 scale_lower  = lambda L, U: lambda x: trim((U - x) / (U - L))
