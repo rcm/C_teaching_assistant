@@ -96,29 +96,34 @@ Output:
 		scale_upper(60,100)(maintainability_index);
 		0.5*scale_lower(1,10)(cyclomatic_complexity)+
 		0.5*scale_upper(60,100)(maintainability_index)
-	HEADER name complexity maint_idx complexity_assessment maint_assessment assessment
+	HEADER name complexity maint_idx cmplxty_grd
+		maint_grd assessment
 	SORT -maintainability_index cyclomatic_complexity name
 	COLOR
-		complexity : palette(scale_lower(1,10))(complexity);
-		maint_idx : maint_idx > 80
+		complexity : scale_lower(1,10)(complexity);
+		maint_idx : maint_idx > 80;
+		cmplxty_grd : cmplxty_grd;
+		maint_grd : maint_grd;
+		assessment : assessment
 
-	name         complexity    maint_idx              complexity_assessment    maint_assessment    assessment
-	-----------  ------------  -------------------  -----------------------  ------------------  ------------
-	NEW_STACK    🟥 1           🟩 100                               1                  1             1
-	POP          🟥 1           🟩 100                               1                  1             1
-	dividir      🟥 1           🟩 100                               1                  1             1
-	main         🟥 1           🟩 100                               1                  1             1
-	PUSH         🟧 2           🟩 100                               0.888889           1             0.944444
-	decrementa   🟧 2           🟩 100                               0.888889           1             0.944444
-	e            🟧 2           🟩 100                               0.888889           1             0.944444
-	expoente     🟧 2           🟩 100                               0.888889           1             0.944444
-	incrementa   🟧 2           🟩 100                               0.888889           1             0.944444
-	modulo       🟧 2           🟩 100                               0.888889           1             0.944444
-	multiplica   🟧 2           🟩 100                               0.888889           1             0.944444
-	nott         🟧 2           🟩 100                               0.888889           1             0.944444
-	ou           🟧 2           🟩 100                               0.888889           1             0.944444
-	soma         🟧 2           🟩 100                               0.888889           1             0.944444
-	subtrai      🟧 2           🟩 100                               0.888889           1             0.944444
-	xorr         🟧 2           🟩 100                               0.888889           1             0.944444
-	PRINT_STACK  🟧 3           🟩 100                               0.777778           1             0.888889
-	parse        🟩 28          🟥 61.85078965844583                 0                  0.0462697     0.0231349
+	name         complexity    maint_idx            cmplxty_grd           maint_grd               assessment
+	-----------  ------------  -------------------  --------------------  ----------------------  ----------------------
+	NEW_STACK    🟥 1           🟩 100                🟥 1.0                 🟥 1.0                   🟥 1.0
+	POP          🟥 1           🟩 100                🟥 1.0                 🟥 1.0                   🟥 1.0
+	dividir      🟥 1           🟩 100                🟥 1.0                 🟥 1.0                   🟥 1.0
+	main         🟥 1           🟩 100                🟥 1.0                 🟥 1.0                   🟥 1.0
+	PUSH         🟧 2           🟩 100                🟧 0.8888888888888888  🟥 1.0                   🟧 0.9444444444444444
+	decrementa   🟧 2           🟩 100                🟧 0.8888888888888888  🟥 1.0                   🟧 0.9444444444444444
+	e            🟧 2           🟩 100                🟧 0.8888888888888888  🟥 1.0                   🟧 0.9444444444444444
+	expoente     🟧 2           🟩 100                🟧 0.8888888888888888  🟥 1.0                   🟧 0.9444444444444444
+	incrementa   🟧 2           🟩 100                🟧 0.8888888888888888  🟥 1.0                   🟧 0.9444444444444444
+	modulo       🟧 2           🟩 100                🟧 0.8888888888888888  🟥 1.0                   🟧 0.9444444444444444
+	multiplica   🟧 2           🟩 100                🟧 0.8888888888888888  🟥 1.0                   🟧 0.9444444444444444
+	nott         🟧 2           🟩 100                🟧 0.8888888888888888  🟥 1.0                   🟧 0.9444444444444444
+	ou           🟧 2           🟩 100                🟧 0.8888888888888888  🟥 1.0                   🟧 0.9444444444444444
+	soma         🟧 2           🟩 100                🟧 0.8888888888888888  🟥 1.0                   🟧 0.9444444444444444
+	subtrai      🟧 2           🟩 100                🟧 0.8888888888888888  🟥 1.0                   🟧 0.9444444444444444
+	xorr         🟧 2           🟩 100                🟧 0.8888888888888888  🟥 1.0                   🟧 0.9444444444444444
+	PRINT_STACK  🟧 3           🟩 100                🟧 0.7777777777777778  🟥 1.0                   🟧 0.8888888888888888
+	parse        🟩 28          🟥 61.85078965844583  🟩 0                   🟩 0.046269741461145666  🟩 0.023134870730572833
+	
