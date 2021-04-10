@@ -62,7 +62,7 @@ def get_comment_before(filename, lineno):
             if comment_end + 1 != function_begin:
                 space = before[comment_end + 1: function_begin]
                 if re.search(r'\S+', space):
-                    print(space)
+                    pass
                 else:
                     comment = last_comment
             else:
@@ -310,12 +310,15 @@ def query(info, lines = None, fmt = "simple"):
         return tabfun.tabfun(tab, color_fun, fmt = fmt)
 
 if __name__ == "__main__":
-	code=sys.argv[1]
-	info = extract_all_functions(code)
+    info = {}
+    for code in sys.argv:
+        info.update(extract_all_functions(code))
 	
-	while True:
-	    print("\nInsert query:")
-	    result = query(info)
-	    if result is None:
-	        break
-	    print(result)
+    while True:
+        print("\nInsert query:")
+        try:
+            result = query(info)
+            if result: print(result)
+        except Exception as e:
+            print(e)
+
