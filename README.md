@@ -89,12 +89,13 @@ Output:
 	COND arg_doc_problems(args,comment)
 
 	SHOW
-		name
-		cyclomatic_complexity
-		maintainability_index
-		scale_lower(1,10)(cyclomatic_complexity)
-		scale_upper(60,100)(maintainability_index)
-		0.5*scale_lower(1,10)(cyclomatic_complexity)+0.5*scale_upper(60,100)(maintainability_index)
+		name;
+		cyclomatic_complexity;
+		maintainability_index;
+		scale_lower(1,10)(cyclomatic_complexity);
+		scale_upper(60,100)(maintainability_index);
+		0.5*scale_lower(1,10)(cyclomatic_complexity)+
+		0.5*scale_upper(60,100)(maintainability_index)
 	HEADER name complexity maint_idx complexity_assessment maint_assessment assessment
 	SORT -maintainability_index cyclomatic_complexity name
 	COLOR

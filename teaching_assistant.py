@@ -244,11 +244,12 @@ def query(info, lines = None):
     color_fun = None
     print(dic)
     if "transform" in dic and type(dic["transform"]) is str:
+        T = [x.strip() for x in dic['transform'].split(";")] if ";" in dic['transform'] else dic['transform'].split()
         if 'header' not in dic:
-            dic['header'] = dic['transform'].split()
+            dic['header'] = T
         else:
             dic['header'] = dic["header"].split()
-        dic["transform"] = f"[{','.join(dic['transform'].split())}]"
+        dic["transform"] = f"[{','.join(T)}]"
     if "sort" in dic and type(dic["sort"]) is str:
         dic["sort"] = f"[{','.join(dic['sort'].split())}]"
     if "color" in dic and type(dic["color"]) is str:
