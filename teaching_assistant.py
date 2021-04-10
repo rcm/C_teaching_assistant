@@ -158,6 +158,8 @@ def extract_all_functions(code):
         data = json.loads(subprocess.getoutput(f"multimetric {tmpdirname}/*.c"))
         function_stats = data["files"]
         for fun in info:
+            info[fun]["folder"] = code
+            info[fun]["project"] = os.path.basename(code)
             info[fun]["stats"] = function_stats[info[fun]["function_filename"]]
     return info
 
@@ -168,7 +170,7 @@ def function_query(info, grep = None, transform = None, sort = None, header = No
                 return f'r"""{x}"""'
             return str(x)
         any_id = list(info.keys())[0]
-        poss = {**{M : (lambda M: lambda F: info.get(F)['stats'][M])(M) for M in info[any_id]['stats']}, **{K : (lambda K : lambda F: info[F][K])(K) for K in "name return args comment".split()}}
+        poss = {**{M : (lambda M: lambda F: info.get(F)['stats'][M])(M) for M in info[any_id]['stats']}, **{K : (lambda K : lambda F: info[F][K])(K) for K in "name folder project return args comment".split()}}
         return lambda F: eval(''.join([stringify(poss[m](F)) if m in poss else m for m in re.split(r'(\w+)', s) if m]))
 
     if grep is None:
