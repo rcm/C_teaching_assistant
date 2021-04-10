@@ -122,7 +122,7 @@ Names, arguments and documented arguments in cases where either an argument was 
 # Using the query system on other scripts
 
 	>>> from teaching_assistant import *
-	>>> info = extract_all_functions("/home/rui/repos/LCCPL2G01")
+	>>> info = extract_all_functions("/home/rui/repos/PL2G01")
 	>>> function_query(info, transform = '[name]', grep = "arg_doc_problems(args, comment)")
 	[['name'], ['parse'], ['main'], ['soma'], ['subtrai'], ['multiplica'], ['dividir'], ['decrementa'], ['incrementa'], ['modulo'], ['expoente'], ['e'], ['ou'], ['xorr'], ['nott'], ['PUSH'], ['POP'], ['PRINT_STACK']]
 
