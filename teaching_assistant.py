@@ -160,7 +160,7 @@ def extract_all_functions(code):
             info[fun]["stats"] = function_stats[info[fun]["function_filename"]]
     return info
 
-def function_query(info, grep = None, transform = None, sort = None):
+def function_query(info, grep = None, transform = None, sort = None, header = None):
     def create_function(info, s):
         def stringify(x):
             if type(x) is str:
@@ -177,7 +177,8 @@ def function_query(info, grep = None, transform = None, sort = None):
     if type(grep) is str:
         grep = create_function(info, grep)
     if type(transform) is str:
-        header = transform.replace("[","").replace("]","").split(",")
+        if header is None:
+            header = transform.replace("[","").replace("]","").split(",")
         transform = create_function(info, transform)
     if type(sort) is str:
         sort = create_function(info, sort)
@@ -201,7 +202,7 @@ def query(info, lines = None):
             str         should be all the input, splits into lines
             List[str]   list with all the lines in the query
     """
-    keywords = { 'COND' : 'grep', 'SHOW' : 'transform', 'SORT' : 'sort', 'COLOR' : 'color'}
+    keywords = { 'HEADER': 'header', 'COND' : 'grep', 'SHOW' : 'transform', 'SORT' : 'sort', 'COLOR' : 'color'}
     if lines is None:
         lines = sys.stdin
     elif type(lines) is str:
@@ -241,25 +242,28 @@ def query(info, lines = None):
         parse(L)
     dic = parse("")
     color_fun = None
+    print(dic)
     if "transform" in dic and type(dic["transform"]) is str:
-        header = dic['transform'].split()
+        if 'header' not in dic:
+            dic['header'] = dic['transform'].split()
+        else:
+            dic['header'] = dic["header"].split()
         dic["transform"] = f"[{','.join(dic['transform'].split())}]"
     if "sort" in dic and type(dic["sort"]) is str:
         dic["sort"] = f"[{','.join(dic['sort'].split())}]"
     if "color" in dic and type(dic["color"]) is str:
-        color_fun = {header.index(K) : eval(f"lambda {K}: {V}") for K, V in [[k.strip() for k in x.split(":")] for x in dic["color"].split(",")]}
+        color_fun = {dic['header'].index(K) : eval(f"lambda {K}: {V}") for K, V in [[k.strip() for k in x.split(":")] for x in dic["color"].split(";")]}
         del dic["color"]
 
     if dic:
         return tabfun.tabfun(function_query(info, **dic), color_fun)
 
 code=sys.argv[1]
-arg_doc_problems = lambda args, comment: set(args.keys()) != set(re.findall(r"@param\s+(\S+)", comment, re.M))
-documented = lambda comment: re.findall(r"@param\s+(\S+)", comment, re.M)
 info = extract_all_functions(code)
+from utilities import *
 
 while True:
-    print(">>> ", end = "")
+    print("\nInsert query:")
     result = query(info)
     if result is None:
         break

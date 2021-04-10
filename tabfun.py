@@ -8,9 +8,9 @@ import tabulate
     0 verde
     -1 azul
 """
-cores = { 3:'🟥', 2:'🟧', 1:'🟨', 0:'🟩', -1:'🟦'} ## 🟪🟫
+colors = { 3:'🟥', 2:'🟧', 1:'🟨', 0:'🟩', -1:'🟦'} ## 🟪🟫
 
-RED, ORANGE, YELLOW, GREEN, BLUE = [cores[c] for c in sorted(cores.keys(), reverse = True)]
+RED, ORANGE, YELLOW, GREEN, BLUE = [colors[c] for c in sorted(colors.keys(), reverse = True)]
 
 ### aval. baseada em tabelas de intervalos→cor
 def interv(inttab,v): 
