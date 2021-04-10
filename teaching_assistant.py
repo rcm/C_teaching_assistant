@@ -8,9 +8,10 @@ Ir buscar os comentários corretos
 
 """
 
-import sys, subprocess, glob, tempfile, os, json, re
+import sys, subprocess, glob, tempfile, os, json, re, io
 import tabfun
 from utilities import *
+from statistics import *
 
 def get_identifier_type(identifier):
     """
@@ -191,7 +192,7 @@ def function_query(info, grep = None, transform = None, sort = None, header = No
 
     return [header] + [transform(Fun) for Fun, v in info.items() if grep(Fun)]
 
-def query(info, lines = None):
+def query(info, lines = None, fmt = "simple"):
     """
     Performs a query
 
@@ -205,7 +206,17 @@ def query(info, lines = None):
             str         should be all the input, splits into lines
             List[str]   list with all the lines in the query
     """
-    keywords = { 'HEADER': 'header', 'COND' : 'grep', 'SHOW' : 'transform', 'SORT' : 'sort', 'COLOR' : 'color'}
+    keywords = {
+            'HEADER'            : 'header',
+            'COND'              : 'grep',
+            'CONDITION'         : 'grep',
+            'SHOW'              : 'transform',
+            'SORT'              : 'sort',
+            'COLOR'             : 'color',
+            'GROUP_BY'          : 'group_by',
+            'AGGREG'            : 'aggregate',
+            'AGGREGATE'         : 'aggregate',
+            }
     if lines is None:
         lines = sys.stdin
     elif type(lines) is str:
@@ -246,8 +257,18 @@ def query(info, lines = None):
         parse(L)
     dic = parse("")
     color_fun = None
-    print(dic)
-    if "transform" in dic and type(dic["transform"]) is str:
+
+    if 'group_by' in dic:
+        group_by = dic['group_by']
+        del dic['group_by']
+    else:
+        group_by = None
+    if 'aggregate' in dic:
+        aggregate = dic['aggregate']
+        del dic['aggregate']
+    else:
+        aggregate = None
+    if 'transform' in dic and type(dic["transform"]) is str:
         T = [x.strip() for x in dic['transform'].split(";")] if ";" in dic['transform'] else dic['transform'].split()
         if 'header' not in dic:
             dic['header'] = T
@@ -261,7 +282,32 @@ def query(info, lines = None):
         del dic["color"]
 
     if dic:
-        return tabfun.tabfun(function_query(info, **dic), color_fun)
+        tab = function_query(info, **dic)
+        if len(tab) > 1 and group_by is not None:
+            if aggregate is not None:
+                afields = aggregate.split(";") if ";" in aggregate else aggregate.split()
+                afields = {F : lambda x: x for F in afields}
+            gfields = group_by.split()
+            fields = tab[0]
+            assert all(F in fields for F in gfields), f"Fields {[F for F in gfields if F not in fields]} do not belong to the table"
+            F_idx = [fields.index(F) for F in gfields]
+            res = {}
+            for L in tab[1:]:
+                key = tuple(L[I] for I in F_idx)
+                if key not in res:
+                    res[key] = {F : [] for F in fields if F not in gfields}
+                for F in res[key].keys():
+                    res[key][F].append(L[fields.index(F)])
+            tab = [gfields + list(afields.keys())]
+            for K, V in res.items():
+                row = list(K)
+                for A in afields:
+                    with io.StringIO() as output:
+                        print(*[V[N] if N in V.keys() else N for N in re.split(r'(\w+)', A)], file = output)
+                        row.append(eval(output.getvalue()))
+                tab.append(row)
+
+        return tabfun.tabfun(tab, color_fun, fmt = fmt)
 
 if __name__ == "__main__":
 	code=sys.argv[1]

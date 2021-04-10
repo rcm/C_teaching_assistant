@@ -98,6 +98,8 @@ Names, arguments and documented arguments in cases where either an argument was 
 		maint_grd : maint_grd;
 		assessment : assessment
 
+Produces the following output
+
 	name         complexity    maint_idx            cmplxty_grd           maint_grd               assessment
 	-----------  ------------  -------------------  --------------------  ----------------------  ----------------------
 	NEW_STACK    🟥 1           🟩 100                🟥 1.0                 🟥 1.0                   🟥 1.0
@@ -118,6 +120,15 @@ Names, arguments and documented arguments in cases where either an argument was 
 	xorr         🟧 2           🟩 100                🟧 0.8888888888888888  🟥 1.0                   🟧 0.9444444444444444
 	PRINT_STACK  🟧 3           🟩 100                🟧 0.7777777777777778  🟥 1.0                   🟧 0.8888888888888888
 	parse        🟩 28          🟥 61.85078965844583  🟩 0                   🟩 0.046269741461145666  🟩 0.023134870730572833
+
+	SHOW name project return loc
+	GROUP_BY project return
+	AGGREG len(name) min(loc) mean(loc) max(loc)
+
+	SHOW name project return loc
+	GROUP_BY project return
+	AGGREG mean(loc); (lambda L: len([x for x in L if x < 10]))(loc)
+
 
 # Using the query system on other scripts
 
