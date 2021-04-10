@@ -24,16 +24,9 @@ Names, arguments and documented arguments in cases where either an argument was 
 
 	function_query(info, transform = '[name, list(args.keys()), re.findall(r"@param\s+(\S+)", comment, re.M)]', grep = 'set(args.keys()) != set(re.findall(r"@param\s+(\S+)", comment, re.M))')
 
-The last example with output
-	>>> function_query(info, transform = '[name, list(args.keys()), re.findall(r"@param\s+(\S+)", comment, re.M)]', grep = 'set(args.keys()) != set(re.findall(r"@param\s+(\S+)", comment, re.M))')
-	[['parse', ['line'], ['strtok', 'sobra', 'strtol']], ['main', [], ['BUFSIZ']], ['soma', ['s'], []], ['subtrai', ['s'], []], ['multiplica', ['s'], []], ['dividir', ['s'], []], ['decrementa', ['s'], []], ['incrementa', ['s'], []], ['modulo', ['s'], []], ['expoente', ['s'], []], ['e', ['s'], []], ['ou', ['s'], []], ['xorr', ['s'], []], ['nott', ['s'], []], ['PUSH', ['s', 'valor'], ['valor']], ['POP', ['s'], []], ['PRINT_STACK', ['s'], []]]
-
 Names, arguments and documented arguments in cases where either an argument was not documented or something that was not an argument was documented as an argument
 
 	function_query(info, transform = '[name]', grep = "arg_doc_problems(args, comment)")
-
-Output:
-	['parse', 'main', 'soma', 'subtrai', 'multiplica', 'dividir', 'decrementa', 'incrementa', 'modulo', 'expoente', 'e', 'ou', 'xorr', 'nott', 'PUSH', 'POP', 'PRINT_STACK']
 
 # Query language
 
@@ -126,4 +119,13 @@ Output:
 	xorr         🟧 2           🟩 100                🟧 0.8888888888888888  🟥 1.0                   🟧 0.9444444444444444
 	PRINT_STACK  🟧 3           🟩 100                🟧 0.7777777777777778  🟥 1.0                   🟧 0.8888888888888888
 	parse        🟩 28          🟥 61.85078965844583  🟩 0                   🟩 0.046269741461145666  🟩 0.023134870730572833
-	
+
+# Using the query system on other scripts
+
+	from teaching_assistant import *
+	info = extract_all_functions("/home/rui/repos/PL2G01")
+	result = query(info, """SHOW name return args
+	SORT name""")
+	print(result)
+
+

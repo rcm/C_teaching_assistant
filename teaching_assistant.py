@@ -207,6 +207,7 @@ def query(info, lines = None):
         lines = sys.stdin
     elif type(lines) is str:
         lines = lines.splitlines()
+        print(lines)
 
     def parser(keywords):
         dic = {}
@@ -259,13 +260,14 @@ def query(info, lines = None):
     if dic:
         return tabfun.tabfun(function_query(info, **dic), color_fun)
 
-code=sys.argv[1]
-info = extract_all_functions(code)
-from utilities import *
-
-while True:
-    print("\nInsert query:")
-    result = query(info)
-    if result is None:
-        break
-    print(result)
+if __name__ == "__main__":
+	code=sys.argv[1]
+	info = extract_all_functions(code)
+	from utilities import *
+	
+	while True:
+	    print("\nInsert query:")
+	    result = query(info)
+	    if result is None:
+	        break
+	    print(result)
