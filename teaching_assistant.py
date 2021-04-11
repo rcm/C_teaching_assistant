@@ -173,6 +173,7 @@ def function_query(info, grep = None, transform = None, sort = None, header = No
     def create_function(info, s):
         def stringify(x):
             if type(x) is str:
+                x = x.replace('"', '\\"').replace("'","\\'")
                 return f'r"""{x}"""'
             return str(x)
         any_id = list(info.keys())[0]
