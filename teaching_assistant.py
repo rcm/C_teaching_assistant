@@ -88,15 +88,39 @@ def create_function_files(filename, functions, folder):
         info[fun] = filename, function_filename, comment
     return info
 
+def get_proto_args(proto):
+    def sep_arg(lst):
+        if "[" in lst[-1]:
+            arr = lst.pop()
+            arg_name = lst.pop()
+            lst.append(arr)
+        else:
+            arg_name = lst.pop()
+
+        return ' '.join(lst), arg_name
+
+    poss_args = re.findall(r"\((.*?)\)", proto)
+    assert len(poss_args) == 1, f"Too many parenthesis groups: {poss_args}"
+    args = [sep_arg(re.findall(r'\w+|\*+|\[.*?\]', x)) for x in poss_args[0].split(",")]
+    return set(args)
+
 def parse_prototype(proto):
-    def adjust(T, V):
-        if "[" in V:
-            p = V.find("[")
-            return V[:p], T + V[p:]
-        return V, T
-    return_type, fun_name, *args = re.findall(r'\w+(?:\s*\*|\s*\[[\w\s]*\])?', proto)
-    args = [adjust(T, V) for T, V in zip(args[0::2], args[1::2])]
-    return return_type, args
+    def sep_arg(lst):
+        if "[" in lst[-1]:
+            arr = lst.pop()
+            arg_name = lst.pop()
+            lst.append(arr)
+        else:
+            arg_name = lst.pop()
+        return arg_name, ' '.join(lst)
+
+    poss_args = re.findall(r"\((.*?)\)", proto)
+    assert len(poss_args) == 1, f"Too many parenthesis groups: {poss_args}"
+    args = [sep_arg(re.findall(r'\w+|\*+|\[.*?\]', x)) for x in poss_args[0].split(",") if x]
+    type_and_fun = re.findall(r'\w+|\*+|\[.*?\]', proto[:proto.find('(')])
+    return_type = ' '.join(type_and_fun[:-1])
+    return return_type, dict(args)
+
 
 def get_functions_from_file(filename, folder):
     output = subprocess.getoutput(f"ctags -x --c-kinds=fl '{filename}' | sort -k3,3n")
