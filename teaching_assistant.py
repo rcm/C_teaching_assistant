@@ -116,7 +116,7 @@ def parse_prototype(proto):
 
     poss_args = re.findall(r"\((.*?)\)", proto)
     assert len(poss_args) == 1, f"Too many parenthesis groups: {poss_args}"
-    args = [sep_arg(re.findall(r'\w+|\*+|\[.*?\]', x)) for x in poss_args[0].split(",") if x]
+    args = [sep_arg(re.findall(r'\w+|\*+|\[.*?\]', x)) for x in poss_args[0].split(",") if x and x.strip() != "..."]
     type_and_fun = re.findall(r'\w+|\*+|\[.*?\]', proto[:proto.find('(')])
     return_type = ' '.join(type_and_fun[:-1])
     return return_type, dict(args)
