@@ -329,6 +329,10 @@ def substitute_report(info, report_filename):
         everything = F.read()
     def run_query(lines):
         nonlocal info
+        if len(lines) > 6 and lines[:6].lower() == "python":
+            exec(lines[6:].strip())
+            globals().update(locals())
+            return ""
         return query(info, lines = lines)
     print(re.sub(r'```(.*?)```',  lambda x: run_query(x.group(1)), everything, flags=re.S))
 

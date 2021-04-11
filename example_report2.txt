@@ -1,0 +1,19 @@
+---
+title: Submission report
+css: estilo.css
+---
+
+```python
+def arg_names(args):
+	return list(args.keys())
+```
+
+The following functions have problems with the definition of their arguments. They either:
+
+- Forget to document some of the function arguments, or
+- Document things that are not function arguments
+
+```
+SHOW project name filetype filename arg_names(args) documented(comment)
+COND arg_doc_problems(args,comment)
+```
