@@ -12,18 +12,18 @@ colors = { 3:'🟥', 2:'🟧', 1:'🟨', 0:'🟩', -1:'🟦'} ## 🟪🟫
 
 RED, ORANGE, YELLOW, GREEN, BLUE = [colors[c] for c in sorted(colors.keys(), reverse = True)]
 
-palette = lambda x: colors[int(3 - x * 3)]
+palette = lambda x: interv([((0.75,1.1),0),((0.5,0.75),1),((0.25,0.5),2),((0, 0.25),3)], x)
 
 ### aval. baseada em tabelas de intervalos→cor
 def interv(inttab,v): 
    for (v1,v2),c in inttab:
-      if v1 < v <= v2:
-         return cores[c] 
+      if v1 <= v < v2:
+         return colors[c] 
    return ""
 
 ### aval. baseada em tabelas valor→cor
 def dictab(tab,v): 
-   return cores[tab.get(v,-1)]
+   return colors[tab.get(v,-1)]
 
 def tabfun(t,funaval = None,fmt="simple"):
    if funaval is None:

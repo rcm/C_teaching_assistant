@@ -216,6 +216,7 @@ def query(info, lines = None, fmt = "simple"):
             'GROUP_BY'          : 'group_by',
             'AGGREG'            : 'aggregate',
             'AGGREGATE'         : 'aggregate',
+            'FILE'              : 'file',
             }
     if lines is None:
         lines = sys.stdin
@@ -280,6 +281,11 @@ def query(info, lines = None, fmt = "simple"):
     if "color" in dic and type(dic["color"]) is str:
         color_fun = {dic['header'].index(K) : eval(f"lambda {K}: {V}") for K, V in [[k.strip() for k in x.split(":")] for x in dic["color"].split(";")]}
         del dic["color"]
+    if "file" in dic:
+        dump_to_file = dic["file"]
+        del dic["file"]
+    else:
+        dump_to_file = None
 
     if dic:
         tab = function_query(info, **dic)
@@ -307,7 +313,11 @@ def query(info, lines = None, fmt = "simple"):
                         row.append(eval(output.getvalue()))
                 tab.append(row)
 
-        return tabfun.tabfun(tab, color_fun, fmt = fmt)
+        tab = tabfun.tabfun(tab, color_fun, fmt = fmt)
+        if dump_to_file is not None:
+            with open(dump_to_file, "w") as DUMP:
+                print(tab, file = DUMP)
+        return tab 
 
 if __name__ == "__main__":
     info = {}
