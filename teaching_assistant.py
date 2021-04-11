@@ -8,7 +8,7 @@ Ir buscar os comentários corretos
 
 """
 
-import sys, subprocess, glob, tempfile, os, json, re, io
+import sys, subprocess, glob, tempfile, os, json, re, io, argparse
 import tabfun
 from utilities import *
 from statistics import *
@@ -122,6 +122,7 @@ def get_functions_from_file(filename, folder):
     for id in info:
         F = (id, filename)
         functions[F]["filename"], functions[F]["function_filename"], functions[F]["comment"] = info[id]
+        functions[F]["filetype"] = functions[F]["filename"][-1].upper()
     return functions 
 
 def extract_all_functions(code):
@@ -147,13 +148,14 @@ def extract_all_functions(code):
     """
     c_files = glob.glob(f"{code}/**/*.c", recursive = True)
     h_files = glob.glob(f"{code}/**/*.h", recursive = True)
+    all_files = h_files + c_files
     
     with tempfile.TemporaryDirectory() as tmpdirname:
         info = {}
         if h_files:
             H_files = " ".join(h_files)
             os.system(f"grep -e '#include.*\".*\.c\"' {H_files}")
-        for file in c_files:
+        for file in all_files:
             info.update(get_functions_from_file(file, tmpdirname))
     
         data = json.loads(subprocess.getoutput(f"multimetric {tmpdirname}/*.c"))
@@ -162,6 +164,9 @@ def extract_all_functions(code):
             info[fun]["folder"] = code
             info[fun]["project"] = os.path.basename(code)
             info[fun]["stats"] = function_stats[info[fun]["function_filename"]]
+            info[fun]["filename"] = info[fun]["filename"].replace(info[fun]["folder"], "")
+            if info[fun]["filename"].startswith("/"):
+                info[fun]["filename"] = info[fun]["filename"][1:]
     return info
 
 def function_query(info, grep = None, transform = None, sort = None, header = None):
@@ -171,7 +176,7 @@ def function_query(info, grep = None, transform = None, sort = None, header = No
                 return f'r"""{x}"""'
             return str(x)
         any_id = list(info.keys())[0]
-        poss = {**{M : (lambda M: lambda F: info.get(F)['stats'][M])(M) for M in info[any_id]['stats']}, **{K : (lambda K : lambda F: info[F][K])(K) for K in "name folder project return args comment".split()}}
+        poss = {**{M : (lambda M: lambda F: info.get(F)['stats'][M])(M) for M in info[any_id]['stats']}, **{K : (lambda K : lambda F: info[F][K])(K) for K in "name folder project return args comment filename filetype".split()}}
         return lambda F: eval(''.join([stringify(poss[m](F)) if m in poss else m for m in re.split(r'(\w+)', s) if m]))
 
     if grep is None:
@@ -221,8 +226,7 @@ def query(info, lines = None, fmt = "simple"):
     if lines is None:
         lines = sys.stdin
     elif type(lines) is str:
-        lines = lines.splitlines()
-        print(lines)
+        lines = lines.strip().splitlines()
 
     def parser(keywords):
         dic = {}
@@ -319,16 +323,30 @@ def query(info, lines = None, fmt = "simple"):
                 print(tab, file = DUMP)
         return tab 
 
+def substitute_report(info, report_filename):
+    with open(report_filename) as F:
+        everything = F.read()
+    def run_query(lines):
+        nonlocal info
+        return query(info, lines = lines)
+    print(re.sub(r'```(.*?)```',  lambda x: run_query(x.group(1)), everything, flags=re.S))
+
 if __name__ == "__main__":
     info = {}
-    for code in sys.argv:
-        info.update(extract_all_functions(code))
-	
-    while True:
-        print("\nInsert query:")
-        try:
-            result = query(info)
-            if result: print(result)
-        except Exception as e:
-            print(e)
-
+    parser = argparse.ArgumentParser()
+    parser.add_argument('-r', nargs = 1, type = str, help='report file using templates')
+    parser.add_argument('project_folder', type = str, nargs='+', help='project folder')
+    args = parser.parse_args()
+    for folder in args.project_folder:
+        info.update(extract_all_functions(folder))
+    if args.r is not None:
+        for report_filename in args.r:
+            substitute_report(info, report_filename)
+    else:
+        while True:
+            print("\nInsert query:")
+            try:
+                result = query(info)
+                if result: print(result)
+            except Exception as e:
+                print(e)

@@ -1,0 +1,30 @@
+# List of problematic functions
+
+These functions are too complex and should be rewritten:
+
+```
+SHOW project name cyclomatic_complexity maintainability_index
+COND cyclomatic_complexity > 10 or maintainability_index < 80
+SORT project -maintainability_index cyclomatic_complexity name
+COLOR cyclomatic_complexity : scale_lower(0,50)(cyclomatic_complexity);
+                maintainability_index : scale_upper(0,100)(maintainability_index)
+```
+
+# Bad documentation
+
+These functions have a *@return* keyword for *void* functions:
+
+```
+SHOW name comment
+COND comment and return == 'void' and '@returns' in comment
+```
+
+The following functions have problems with the definition of their arguments. They either:
+
+- Forget to document some of the function arguments, or
+- Document things that are not function arguments
+
+```
+SHOW name filetype filename args documented(comment)
+COND arg_doc_problems(args,comment)
+```
