@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-import tabulate
+import tabulate, colour
 
 """
     3 vermelho
@@ -35,9 +35,11 @@ def tabfun(t,funaval = None,fmt="simple"):
           res = fun(aux[f])
           if type(res) is bool:
               res = GREEN if res else RED
+              aux[f] = f"{res} {aux[f]}"
           if type(res) is float or type(res) is int and 0 <= res <= 1:
-              res = palette(res)
-          aux[f] = f"{res} {aux[f]}"
+              #res = palette(res)
+              res = list(colour.Color("red").range_to(colour.Color("green"), 101))[int(res * 100)]
+              aux[f] = f'<span style="color:{res}">&block;</span> {aux[f]}'
       r.append(aux)
    return tabulate.tabulate(r,headers="firstrow",tablefmt=fmt)
 
