@@ -1,13 +1,5 @@
 #!/usr/bin/python3
 
-
-"""
-Todo:
-O pipeline
-Ir buscar os comentários corretos
-
-"""
-
 import sys, subprocess, glob, tempfile, os, json, re, io, argparse
 import tabfun
 from utilities import *
@@ -105,6 +97,9 @@ def get_proto_args(proto):
     return set(args)
 
 def parse_prototype(proto):
+    if '{' in proto:
+        proto = proto[ : proto.find('{')]
+
     def sep_arg(lst):
         if "[" in lst[-1]:
             arr = lst.pop()
@@ -122,14 +117,30 @@ def parse_prototype(proto):
     return return_type, dict(args)
 
 
-def get_functions_from_file(filename, folder):
-    output = subprocess.getoutput(f"ctags -x --c-kinds=fl '{filename}' | sort -k3,3n")
+def get_functions_from_file(filename, basedir, folder):
+    real_filename = filename
+    base_filename = filename.replace(basedir, "")
+    if base_filename.startswith('/'):
+        base_filename = base_filename[1:]
+
+    with tempfile.TemporaryDirectory() as tmpdirname:
+        if '/' in base_filename:
+            base_dirname = os.path.dirname(base_filename)
+            os.makedirs(f'{tmpdirname}/{base_dirname}', exist_ok = True)
+        #filename = f'{tmpdirname}/{base_filename}'
+        #output = subprocess.getoutput(f"gcc -E '{real_filename}' > '{tmpdirname}/{base_filename}'")
+        output = subprocess.getoutput(f"ctags -x --c-kinds=fl '{filename}' | sort -k3,3n")
+        return do_get_functions_from_file(filename, folder, output)
+
+def do_get_functions_from_file(filename, folder, output):
     current_function = None
     functions = {}
     lines = []
     info = {}
     for line in output.splitlines():
         identifier, type, lineno, file, *rest = line.split()
+        if identifier in '__bswap_32 __bswap_64 __uint16_identity __uint32_identity __uint64_identity'.split():
+            continue
         if type == "function":
             return_type, args = parse_prototype(' '.join(rest))
             lines.append((identifier, lineno))
@@ -180,7 +191,7 @@ def extract_all_functions(code):
             H_files = " ".join(h_files)
             os.system(f"grep -e '#include.*\".*\.c\"' {H_files}")
         for file in all_files:
-            info.update(get_functions_from_file(file, tmpdirname))
+            info.update(get_functions_from_file(file, code, tmpdirname))
     
         data = json.loads(subprocess.getoutput(f"multimetric {tmpdirname}/*.c"))
         function_stats = data["files"]
