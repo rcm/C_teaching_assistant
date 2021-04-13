@@ -1,5 +1,9 @@
 # C_teaching_assistant
 
+How to run the queries
+
+query.py [-r report_template] folders
+
 # Some examples
 
 Names of functions without comments
