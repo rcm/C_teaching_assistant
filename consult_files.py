@@ -1,15 +1,48 @@
-import subprocess, re, tempfile, json
+import subprocess, re, tempfile, json, glob
+from collections import defaultdict
+import weakref
 import pprint
 
-class ProgrammingLanguage:
-    def __init__(self, files):
+def count_extensions(files):
+    extensions = [f[f.rfind('.') + 1:] for f in files if '.' in f]
+    return { e : extensions.count(e) for e in extensions}
+
+def infer_language(files):
+    extensions = {F : C for C in ProgrammingLanguage.get_instances() for F in C.files}
+    res = {}
+    for e, n in count_extensions(files).items():
+        if e in extensions:
+            res[extensions[e]] = res.get(extensions[e], 0) + n
+    print(res)
+
+class KeepRefs(object):
+    __refs__ = defaultdict(list)
+    def __init__(self):
+        self.__refs__[self.__class__].append(weakref.ref(self))
+    @classmethod
+    def get_instances(cls):
+        for inst_ref in cls.__refs__[cls]:
+            inst = inst_ref()
+            if inst is not None:
+                yield inst
+
+class ProgrammingLanguage(KeepRefs):
+    def __init__(self, name, files):
+        super().__init__()
         assert files, "No files"
         for f in files: assert issubclass(f, CodeFile), f"{f} is not a CodeFile"
-        self.files = files
+        self.name = name
+        self.files = {f.__extension__ for f in files}
+    def __repr__(self):
+        return self.name
 
 class CodeFolder:
-    def __init__(self, name, language):
+    def __init__(self, name, language = None):
         self.name = name
+        self.language = language or infer_language(glob.glob(f"{name}/**", recursive = True))
+
+    def get_documentation(self):
+        pass
 
 class CodeFile:
     def __init__(self, **args):
@@ -45,17 +78,24 @@ class CodeFile:
     def create_temp_file(self, fname, code):
         with open(fname, "w") as F:
             F.write(code)
+
+
 class CFile(CodeFile):
+    __extension__ = "c"
     def __init__(self, **args):
-        self.extension = "c"
         super().__init__(**args)
 
 class HFile(CodeFile):
+    __extension__ = "h"
     def __init__(self, **args):
-        self.extension = "h"
         super().__init__(**args)
 
 class PythonFile(CodeFile):
+    __extension__ = "py"
     def __init__(self, **args):
-        self.extension = "py"
         super().__init__(**args)
+
+PythonLanguage = ProgrammingLanguage("Python",[PythonFile])
+CLanguage = ProgrammingLanguage("C", [HFile, CFile])
+
+CodeFolder("/home/laboratorios/repos/MIEIPL1G02")
