@@ -6,9 +6,26 @@ import sys
 import argparse
 import tabfun
 from teaching_assistant import function_query, extract_all_functions
+from utilities import *
+
+def substitute_report(info, report_filename):
+    with open(report_filename) as F:
+        everything = F.read()
+    functions = {}
+    def run_query(lines):
+        nonlocal info
+        nonlocal functions
+        globals().update(functions)
+        if len(lines) > 6 and lines[:6].lower() == "python":
+            exec(lines[6:].strip(), functions)
+            return ""
+        return query(info, lines = lines, functions = functions)
+    print(re.sub(r'```(.*?)```',  lambda x: run_query(x.group(1)), everything, flags=re.S))
 
 
-def query(info, lines = None, fmt = "simple"):
+
+
+def query(info, lines = None, functions = None, fmt = "simple"):
     """
     Performs a query
 
@@ -103,6 +120,7 @@ def query(info, lines = None, fmt = "simple"):
         dump_to_file = None
 
     if dic:
+        dic['functions'] = functions
         tab = function_query(info, **dic)
         if len(tab) > 1 and group_by is not None:
             if aggregate is not None:

@@ -221,25 +221,12 @@ def function_query(info, **options):
         'sort'      : None
     }
     options.update({k : create_function(info, v) for k, v in options.items() if type(v) is str})
-
     opts.update(options)
+    if opts.get('functions'):
+        globals().update(opts.get('functions'))
 
     res = [opts['transform'](Fun) for Fun, v in info.items() if opts['grep'](Fun)]
     if opts['sort'] is not None:
         res = [x[1] for x in sorted(((Fun, opts['transform'](Fun)) for Fun, v in info.items() if opts['grep'](Fun)), key = lambda x: opts['sort'](x[0]))]
 
     return [opts['header']] + res
-
-def substitute_report(info, report_filename):
-    with open(report_filename) as F:
-        everything = F.read()
-    def run_query(lines):
-        nonlocal info
-        if len(lines) > 6 and lines[:6].lower() == "python":
-            exec(lines[6:].strip())
-            globals().update(locals())
-            return ""
-        return query(info, lines = lines)
-    print(re.sub(r'```(.*?)```',  lambda x: run_query(x.group(1)), everything, flags=re.S))
-
-
