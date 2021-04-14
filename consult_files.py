@@ -3,18 +3,6 @@ from collections import defaultdict
 import weakref
 import pprint
 
-def count_extensions(files):
-    extensions = [f[f.rfind('.') + 1:] for f in files if '.' in f]
-    return { e : extensions.count(e) for e in extensions}
-
-def infer_language(files):
-    extensions = {F : C for C in ProgrammingLanguage.get_instances() for F in C.files}
-    res = {}
-    for e, n in count_extensions(files).items():
-        if e in extensions:
-            res[extensions[e]] = res.get(extensions[e], 0) + n
-    print(res)
-
 class KeepRefs(object):
     __refs__ = defaultdict(list)
     def __init__(self):
@@ -32,14 +20,28 @@ class ProgrammingLanguage(KeepRefs):
         assert files, "No files"
         for f in files: assert issubclass(f, CodeFile), f"{f} is not a CodeFile"
         self.name = name
-        self.files = {f.__extension__ for f in files}
+        self.extensions = {f.__extension__ for f in files}
+        self.files = {f for f in files}
+    @classmethod
+    def get_language(cls, name):
+        if name is None: return
+        for lang in cls.get_instances():
+            if lang.name.lower() == name.lower(): return lang
+    @classmethod
+    def get_language_file_for(cls, filename):
+        extension = '.' in filename and filename[filename.rfind('.') + 1:]
+        extensions = {F.__extension__ : (C, F) for C in cls.get_instances() for F in C.files}
+        return extensions.get(extension)
     def __repr__(self):
         return self.name
 
 class CodeFolder:
     def __init__(self, name, language = None):
         self.name = name
-        self.language = language or infer_language(glob.glob(f"{name}/**", recursive = True))
+        self.language = language
+    def get_files(self):
+        self.files = [P[1](filename = f) for f in glob.glob(f"{self.name}/**", recursive=True) if (P :=ProgrammingLanguage.get_language_file_for(f))]
+        print(self.files)
 
     def get_documentation(self):
         pass
@@ -47,7 +49,7 @@ class CodeFolder:
 class CodeFile:
     def __init__(self, **args):
         self.__dict__.update(args)
-        required = "folder filename extension"
+        required = "filename"
         assert all(arg in self.__dict__ for arg in required.split()), f"Required arguments: {required}"
         self.get_functions()
         self.get_multimetric()
@@ -71,7 +73,7 @@ class CodeFile:
         self.functions = res
     def get_multimetric(self):
         for entry in self.functions:
-            with tempfile.NamedTemporaryFile(suffix = "." + self.extension) as TMP_F:
+            with tempfile.NamedTemporaryFile(suffix = "." + self.__extension__) as TMP_F:
                 self.create_temp_file(TMP_F.name, entry['code'])
                 res = subprocess.getoutput(f"multimetric {TMP_F.name}")
                 entry['stats'] = json.loads(res)['overall']
@@ -98,4 +100,5 @@ class PythonFile(CodeFile):
 PythonLanguage = ProgrammingLanguage("Python",[PythonFile])
 CLanguage = ProgrammingLanguage("C", [HFile, CFile])
 
-CodeFolder("/home/laboratorios/repos/MIEIPL1G02")
+c = CodeFolder("/home/laboratorios/repos/MIEIPL1G02")
+c.get_files()
