@@ -1,3 +1,4 @@
+import shutil, os
 import subprocess, re, tempfile, json, glob
 from collections import defaultdict
 import weakref
@@ -42,7 +43,13 @@ class CodeFolder:
     def get_files(self):
         self.files = [P[1](filename = f) for f in glob.glob(f"{self.name}/**", recursive=True) if (P :=ProgrammingLanguage.get_language_file_for(f))]
         print(self.files)
-
+    def get_multimetric(self):
+        with tempfile.TemporaryDirectory() as DIR:
+            shutil.copytree(self.name, f"{DIR}/copy")
+            files = [P[1](filename = f, partial = False) for f in glob.glob(f"{DIR}/copy/**", recursive=True) if (P :=ProgrammingLanguage.get_language_file_for(f))]
+            for F in files:
+                F.__class__.preprocess(F.filename)
+            self.metrics = json.loads(subprocess.getoutput(f"multimetric {' '.join(F.filename for F in files)}"))
     def get_documentation(self):
         pass
 
@@ -51,9 +58,12 @@ class CodeFile:
         self.__dict__.update(args)
         required = "filename"
         assert all(arg in self.__dict__ for arg in required.split()), f"Required arguments: {required}"
-        self.get_functions()
-        self.get_multimetric()
-
+        if self.__dict__.get("partial"):
+            self.get_functions()
+            self.get_multimetric()
+    @classmethod
+    def preprocess(cls, name):
+        pass
     def get_functions(self):
         res = []
         with open(self.filename) as F:
@@ -86,6 +96,15 @@ class CFile(CodeFile):
     __extension__ = "c"
     def __init__(self, **args):
         super().__init__(**args)
+    @classmethod
+    def preprocess(cls, name):
+        with tempfile.NamedTemporaryFile(suffix = ".c") as TEMP:
+            os.system(f'gcc -E {name} > {TEMP.name}')
+            shutil.copyfile(TEMP.name, name)
+    def create_temp_file(self, fname, code):
+        with open(fname, "w") as F:
+            F.write(code)
+        self.__class__.preprocess(fname)
 
 class HFile(CodeFile):
     __extension__ = "h"
@@ -100,5 +119,5 @@ class PythonFile(CodeFile):
 PythonLanguage = ProgrammingLanguage("Python",[PythonFile])
 CLanguage = ProgrammingLanguage("C", [HFile, CFile])
 
-c = CodeFolder("/home/laboratorios/repos/MIEIPL1G02")
-c.get_files()
+c = CodeFolder("/home/rui/repos/MIEIPL1G02")
+c.get_multimetric()
