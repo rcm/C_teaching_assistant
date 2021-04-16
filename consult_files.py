@@ -40,16 +40,18 @@ class CodeFolder:
     def __init__(self, name, language = None):
         self.name = name
         self.language = language
+        self.files = None
     def get_files(self):
-        self.files = [P[1](filename = f) for f in glob.glob(f"{self.name}/**", recursive=True) if (P :=ProgrammingLanguage.get_language_file_for(f))]
-        print(self.files)
+        self.files = self.files or [P[1](filename = f) for f in glob.glob(f"{self.name}/**", recursive=True) if (P :=ProgrammingLanguage.get_language_file_for(f))]
+        return self.files
     def get_multimetric(self):
         with tempfile.TemporaryDirectory() as DIR:
             shutil.copytree(self.name, f"{DIR}/copy")
-            files = [P[1](filename = f, partial = False) for f in glob.glob(f"{DIR}/copy/**", recursive=True) if (P :=ProgrammingLanguage.get_language_file_for(f))]
+#            files = [P[1](filename = f, partial = True) for f in glob.glob(f"{DIR}/copy/**", recursive=True) if (P :=ProgrammingLanguage.get_language_file_for(f))]
+            files = [P[1](filename = f) for f in glob.glob(f"{DIR}/copy/**", recursive=True) if (P :=ProgrammingLanguage.get_language_file_for(f))]
             for F in files:
                 F.__class__.preprocess(F.filename)
-            self.metrics = json.loads(subprocess.getoutput(f"multimetric {' '.join(F.filename for F in files)}"))
+            self.metrics = json.loads(subprocess.getoutput(f"multimetric {' '.join(F.filename for F in files)}"))['files']
     def get_documentation(self):
         pass
 
@@ -58,7 +60,7 @@ class CodeFile:
         self.__dict__.update(args)
         required = "filename"
         assert all(arg in self.__dict__ for arg in required.split()), f"Required arguments: {required}"
-        if self.__dict__.get("partial"):
+        if not self.__dict__.get("partial"):
             self.get_functions()
             self.get_multimetric()
     @classmethod
@@ -66,6 +68,7 @@ class CodeFile:
         pass
     def get_functions(self):
         res = []
+        self.__class__.preprocess(self.filename)
         with open(self.filename) as F:
             lines = F.readlines()
         list_files = subprocess.getoutput(f"echo | ctags -u --filter {self.filename}").splitlines()
@@ -86,7 +89,9 @@ class CodeFile:
             with tempfile.NamedTemporaryFile(suffix = "." + self.__extension__) as TMP_F:
                 self.create_temp_file(TMP_F.name, entry['code'])
                 res = subprocess.getoutput(f"multimetric {TMP_F.name}")
-                entry['stats'] = json.loads(res)['overall']
+                res_json = json.loads(res)
+                assert len(res_json['files']) == 1
+                entry['stats'] =  res_json['files'][TMP_F.name]
     def create_temp_file(self, fname, code):
         with open(fname, "w") as F:
             F.write(code)
@@ -120,4 +125,5 @@ PythonLanguage = ProgrammingLanguage("Python",[PythonFile])
 CLanguage = ProgrammingLanguage("C", [HFile, CFile])
 
 c = CodeFolder("/home/rui/repos/MIEIPL1G02")
-c.get_multimetric()
+#c.get_multimetric()
+c.get_files()

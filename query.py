@@ -166,8 +166,5 @@ if __name__ == "__main__":
     else:
         while True:
             print("\nInsert query:")
-            try:
-                result = query(info)
-                if result: print(result)
-            except Exception as e:
-                print(e)
+            result = query(info)
+            if result: print(result)
