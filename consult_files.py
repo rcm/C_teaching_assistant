@@ -121,9 +121,53 @@ class PythonFile(CodeFile):
     def __init__(self, **args):
         super().__init__(**args)
 
+def stringify(x):
+    if type(x) is str:
+        x = x.replace('"', '\\"').replace("'", "\\'")
+        return f'r"""{x}"""'
+    return str(x)
+
+def substitute(row):
+    def replace_values(key):
+        val = key.group()
+        return stringify(row[val]) if val in row else val
+    return replace_values
+
+class Table:
+    def __init__(self):
+        self.headers = None
+        self.rows = []
+    def add_row(self, **args):
+        row_headers = [K for K in args.keys()]
+        if self.headers is None:
+            self.headers = row_headers
+        assert set(self.headers) == set(row_headers), f"Problem adding {args} to the table"
+        self.rows.append(args)
+    def select(self, condition):
+        self.rows = [row for row in self.rows if eval(re.sub(r'\w+', substitute(row), condition))]
+    def transform(self, headers):
+        self.rows = [{K : row[K] if K in row else eval(re.sub(r'\w+', substitute(row), K)) for K in headers}
+            for row in self.rows]
+        self.headers = headers
+    def rename(self, headers):
+        assert len(self.headers) == len(headers), f"Different sizes {len(self.headers)} != {len(headers)}"
+        self.rows = [{K2: V for (K1, V), K2 in zip(row.items(), headers)} for row in self.rows]
+    def sort(self, headers):
+        self.rows = sorted(self.rows, key = lambda R : [eval(re.sub(r'\w+', substitute(R), K)) for K in headers])
 PythonLanguage = ProgrammingLanguage("Python",[PythonFile])
 CLanguage = ProgrammingLanguage("C", [HFile, CFile])
 
-c = CodeFolder("/home/rui/repos/MIEIPL1G02")
-#c.get_multimetric()
-c.get_files()
+# c = CodeFolder("/home/rui/repos/MIEIPL1G02")
+# c.get_multimetric()
+# c.get_files()
+
+t = Table()
+t.add_row(x=2,y="ola boo dois".split())
+t.add_row(y=[["ola"], "boo", 2],x=3)
+t.add_row(y="xyz",x=5)
+
+t.select('x >= 4 or "ola" in y')
+t.transform(["y * x", "y", "x"])
+t.rename(["prod", "Y", "X"])
+t.sort(["-X"])
+print(t.rows)
