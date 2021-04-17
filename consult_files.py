@@ -141,6 +141,7 @@ class CFile(CodeFile):
         super().__init__(**args)
     @classmethod
     def preprocess(cls, name):
+        return
         with tempfile.NamedTemporaryFile(suffix = ".c") as TEMP:
             os.system(f'gcc -E "{name}" > {TEMP.name}')
             shutil.copyfile(TEMP.name, name)
@@ -171,10 +172,13 @@ def substitute(row):
         return stringify(row[val]) if val in row else val
     return replace_values
 
+
 class Table:
     def __init__(self):
         self.headers = None
         self.rows = []
+        self.colors = None
+
     def __add__(self, other):
         assert isinstance(other, Table)
         assert set(self.headers) == set(other.headers)
@@ -182,40 +186,88 @@ class Table:
         tab.headers = self.headers
         tab.rows = self.rows + other.rows
         return tab
+
     def add_row(self, **args):
         row_headers = [K for K in args.keys()]
         if self.headers is None:
             self.headers = row_headers
         assert set(self.headers) == set(row_headers), f"Problem adding {args} to the table"
         self.rows.append(args)
+
     def select(self, condition):
         self.rows = [row for row in self.rows if eval(re.sub(r'\w+', substitute(row), condition))]
+
     def transform(self, headers):
         self.rows = [{K : row[K] if K in row else eval(re.sub(r'\w+', substitute(row), K)) for K in headers}
             for row in self.rows]
         self.headers = headers
+
     def rename(self, headers):
         assert len(self.headers) == len(headers), f"Different sizes {len(self.headers)} != {len(headers)}"
         self.rows = [{K2: V for (K1, V), K2 in zip(row.items(), headers)} for row in self.rows]
         self.headers = headers
+
     def sort(self, headers):
         self.rows = sorted(self.rows, key = lambda R : [eval(re.sub(r'\w+', substitute(R), K)) for K in headers])
+
+    def color_by(self, colors):
+        self.colors = {self.headers.index(K): V for K, V in colors.items()}
+
     def tabulate(self):
-        return tabfun.tabfun([self.headers] + [[row[K] for K in self.headers] for row in self.rows])
+        return tabfun.tabfun([self.headers] + [[row[K] for K in self.headers] for row in self.rows],
+                             funaval = self.colors)
+
+    def from_json(self,  filename):
+        with open(filename) as F:
+            self.headers, self.rows = json.load(F)
+
+    def to_json(self, filename=None):
+        if filename is not None:
+            with open(filename, 'w') as F:
+                json.dump([self.headers, self.rows], F)
+        else:
+            json.dumps([self.headers, self.rows])
+
+
 PythonLanguage = ProgrammingLanguage("Python",[PythonFile])
 CLanguage = ProgrammingLanguage("C", [HFile, CFile])
 
+if False:
+    T = None
+    for folder in glob.glob("/home/rui/repos/LCC*") + glob.glob("/home/rui/repos/MIEI*"):
+        if T is None:
+             T = CodeFolder(folder).create_function_table()
+        else:
+            tab = CodeFolder(folder).create_function_table()
+            if tab:
+                T = T + tab
+    T.to_json("cached_results.json")
+else:
+    T = Table()
+    T.from_json("cached_results.json")
 
-T = None
-for folder in glob.glob("/home/rui/repos/LCC*") + glob.glob("/home/rui/repos/MIEI*"):
-    if T is None:
-         T = CodeFolder(folder).create_function_table()
-    else:
-        tab = CodeFolder(folder).create_function_table()
-        if tab:
-            T = T + tab
+def col_CC(x):
+    if x < 10: return tabfun.GREEN
+    if x < 20: return tabfun.ORANGE
+    if x < 30: return tabfun.YELLOW
+    return tabfun.RED
+def col_MI(x):
+    if x > 80: return tabfun.GREEN
+    if x > 60: return tabfun.ORANGE
+    if x > 40: return tabfun.YELLOW
+    return tabfun.RED
 
-T.transform('folder.sub("home/rui/repos","") name filename cyclomatic_complexity loc maintainability_index'.split())
-T.rename("folder name filename CC loc MI".split())
+def col_BP(x):
+    if x < 0.05: return tabfun.GREEN
+    if x < 0.01: return tabfun.ORANGE
+    if x < 0.1: return tabfun.YELLOW
+    return tabfun.RED
+
+T.transform('folder.replace("/home/rui/repos/","") name re.sub(r"^/tmp/tmp.*?/copy/","",filename) cyclomatic_complexity loc maintainability_index halstead_bugprop'.split())
+T.rename("folder name filename CC loc MI BP".split())
 T.sort("folder MI -CC -loc filename name".split())
+T.transform("folder name filename CC MI BP".split())
+T.color_by({'CC' : col_CC, 'MI' : col_MI, 'BP' : col_BP})
+
+#T.select('folder == "MIEIPL2G01"')
 print(T.tabulate())
