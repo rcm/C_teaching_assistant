@@ -1,13 +1,21 @@
-import shutil, os
-import subprocess, re, tempfile, json, glob
+import shutil
+import os
+import subprocess
+import re
+import tempfile
+import json
+import glob
 from collections import defaultdict
 import weakref
-import pprint
+import tabfun
+
 
 class KeepRefs(object):
     __refs__ = defaultdict(list)
+
     def __init__(self):
         self.__refs__[self.__class__].append(weakref.ref(self))
+
     @classmethod
     def get_instances(cls):
         for inst_ref in cls.__refs__[cls]:
@@ -15,45 +23,73 @@ class KeepRefs(object):
             if inst is not None:
                 yield inst
 
+
 class ProgrammingLanguage(KeepRefs):
     def __init__(self, name, files):
         super().__init__()
         assert files, "No files"
-        for f in files: assert issubclass(f, CodeFile), f"{f} is not a CodeFile"
+        for f in files:
+            assert issubclass(f, CodeFile), f"{f} is not a CodeFile"
         self.name = name
         self.extensions = {f.__extension__ for f in files}
         self.files = {f for f in files}
+
     @classmethod
     def get_language(cls, name):
-        if name is None: return
+        if name is None:
+            return
         for lang in cls.get_instances():
-            if lang.name.lower() == name.lower(): return lang
+            if lang.name.lower() == name.lower():
+                return lang
+
     @classmethod
     def get_language_file_for(cls, filename):
         extension = '.' in filename and filename[filename.rfind('.') + 1:]
-        extensions = {F.__extension__ : (C, F) for C in cls.get_instances() for F in C.files}
+        extensions = {F.__extension__: (C, F) for C in cls.get_instances() for F in C.files}
         return extensions.get(extension)
+
     def __repr__(self):
         return self.name
 
+
 class CodeFolder:
-    def __init__(self, name, language = None):
+    def __init__(self, name, language=None):
         self.name = name
         self.language = language
         self.files = None
+        self.metrics = None
+
+    def create_function_table(self):
+        self.get_files()
+        tab = Table()
+        rows = [{**{K: V for K, V in fun.items() if K != 'stats'}, **{K: V for K, V in fun['stats'].items()}}
+                for FILE in self.files for fun in FILE.functions]
+        if not rows:
+            return None
+        for row in rows:
+            tab.add_row(**{**{'folder': self.name, **row}})
+        return tab
+
     def get_files(self):
-        self.files = self.files or [P[1](filename = f) for f in glob.glob(f"{self.name}/**", recursive=True) if (P :=ProgrammingLanguage.get_language_file_for(f))]
+        with tempfile.TemporaryDirectory() as DIR:
+            shutil.copytree(self.name, f"{DIR}/copy")
+            self.files = self.files or [P[1](filename=f) for f in glob.glob(f"{DIR}/copy/**", recursive=True)
+                                        if (P := ProgrammingLanguage.get_language_file_for(f))]
         return self.files
+
     def get_multimetric(self):
         with tempfile.TemporaryDirectory() as DIR:
             shutil.copytree(self.name, f"{DIR}/copy")
-#            files = [P[1](filename = f, partial = True) for f in glob.glob(f"{DIR}/copy/**", recursive=True) if (P :=ProgrammingLanguage.get_language_file_for(f))]
-            files = [P[1](filename = f) for f in glob.glob(f"{DIR}/copy/**", recursive=True) if (P :=ProgrammingLanguage.get_language_file_for(f))]
+#           files = [P[1](filename = f, partial = True) for f in glob.glob(f"{DIR}/copy/**", recursive=True) if (P := ProgrammingLanguage.get_language_file_for(f))]
+            files = [P[1](filename=f) for f in glob.glob(f"{DIR}/copy/**", recursive=True)
+                     if (P := ProgrammingLanguage.get_language_file_for(f))]
             for F in files:
                 F.__class__.preprocess(F.filename)
             self.metrics = json.loads(subprocess.getoutput(f"multimetric {' '.join(F.filename for F in files)}"))['files']
+
     def get_documentation(self):
         pass
+
 
 class CodeFile:
     def __init__(self, **args):
@@ -63,23 +99,25 @@ class CodeFile:
         if not self.__dict__.get("partial"):
             self.get_functions()
             self.get_multimetric()
+
     @classmethod
     def preprocess(cls, name):
         pass
+
     def get_functions(self):
         res = []
         self.__class__.preprocess(self.filename)
         with open(self.filename) as F:
             lines = F.readlines()
-        list_files = subprocess.getoutput(f"echo | ctags -u --filter {self.filename}").splitlines()
-        funs = {id for id, finename, regexp, what, *where in (line.split('\t') for line in list_files) if what == "f" and not where}
+        list_files = subprocess.getoutput(f'echo | ctags -u --filter "{self.filename}"').splitlines()
+        funs = {ident for ident, filename, regexp, what, *where in (line.split('\t') for line in list_files) if what == "f" and not where}
         lst = subprocess.getoutput(f"ctags -x -u {self.filename}").splitlines()
         line_numbers = []
         for line in lst:
-            id, what, lineno, filename, *rest = re.split(r'\s+', line)
+            ident, what, lineno, filename, *rest = re.split(r'\s+', line)
             line_numbers.append(lineno)
-            if id in funs:
-                res.append({'name' : id, 'filename' : filename, 'lineno' : lineno, 'definition' : ' '.join(rest)})
+            if ident in funs:
+                res.append({'name': ident, 'filename': filename, 'lineno': lineno, 'definition': ' '.join(rest)})
         for n, entry in enumerate(res):
             fst, lst = int(entry['lineno']), int(res[n + 1]['lineno']) if n + 1 < len(res) else len(lines)
             entry.update({'code' : ''.join(lines[fst: lst]), 'endline' : lst, 'loc' : lst - fst})
@@ -104,7 +142,7 @@ class CFile(CodeFile):
     @classmethod
     def preprocess(cls, name):
         with tempfile.NamedTemporaryFile(suffix = ".c") as TEMP:
-            os.system(f'gcc -E {name} > {TEMP.name}')
+            os.system(f'gcc -E "{name}" > {TEMP.name}')
             shutil.copyfile(TEMP.name, name)
     def create_temp_file(self, fname, code):
         with open(fname, "w") as F:
@@ -137,6 +175,13 @@ class Table:
     def __init__(self):
         self.headers = None
         self.rows = []
+    def __add__(self, other):
+        assert isinstance(other, Table)
+        assert set(self.headers) == set(other.headers)
+        tab = Table()
+        tab.headers = self.headers
+        tab.rows = self.rows + other.rows
+        return tab
     def add_row(self, **args):
         row_headers = [K for K in args.keys()]
         if self.headers is None:
@@ -152,22 +197,25 @@ class Table:
     def rename(self, headers):
         assert len(self.headers) == len(headers), f"Different sizes {len(self.headers)} != {len(headers)}"
         self.rows = [{K2: V for (K1, V), K2 in zip(row.items(), headers)} for row in self.rows]
+        self.headers = headers
     def sort(self, headers):
         self.rows = sorted(self.rows, key = lambda R : [eval(re.sub(r'\w+', substitute(R), K)) for K in headers])
+    def tabulate(self):
+        return tabfun.tabfun([self.headers] + [[row[K] for K in self.headers] for row in self.rows])
 PythonLanguage = ProgrammingLanguage("Python",[PythonFile])
 CLanguage = ProgrammingLanguage("C", [HFile, CFile])
 
-# c = CodeFolder("/home/rui/repos/MIEIPL1G02")
-# c.get_multimetric()
-# c.get_files()
 
-t = Table()
-t.add_row(x=2,y="ola boo dois".split())
-t.add_row(y=[["ola"], "boo", 2],x=3)
-t.add_row(y="xyz",x=5)
+T = None
+for folder in glob.glob("/home/rui/repos/LCC*") + glob.glob("/home/rui/repos/MIEI*"):
+    if T is None:
+         T = CodeFolder(folder).create_function_table()
+    else:
+        tab = CodeFolder(folder).create_function_table()
+        if tab:
+            T = T + tab
 
-t.select('x >= 4 or "ola" in y')
-t.transform(["y * x", "y", "x"])
-t.rename(["prod", "Y", "X"])
-t.sort(["-X"])
-print(t.rows)
+T.transform('folder.sub("home/rui/repos","") name filename cyclomatic_complexity loc maintainability_index'.split())
+T.rename("folder name filename CC loc MI".split())
+T.sort("folder MI -CC -loc filename name".split())
+print(T.tabulate())
