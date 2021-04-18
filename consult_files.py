@@ -105,7 +105,6 @@ class CodeFile:
 
     def get_functions(self):
         res = []
-        self.__class__.preprocess(self.filename)
         with open(self.filename) as F:
             lines = F.readlines()
         list_files = subprocess.getoutput(f'echo | ctags -u --filter "{self.filename}"').splitlines()
@@ -121,6 +120,7 @@ class CodeFile:
             fst, lst = int(entry['lineno']), int(res[n + 1]['lineno']) if n + 1 < len(res) else len(lines)
             entry.update({'code' : ''.join(lines[fst: lst]), 'endline' : lst, 'loc' : lst - fst})
         self.functions = res
+
     def get_multimetric(self):
         for entry in self.functions:
             with tempfile.NamedTemporaryFile(suffix = "." + self.__extension__) as TMP_F:
@@ -129,6 +129,7 @@ class CodeFile:
                 res_json = json.loads(res)
                 assert len(res_json['files']) == 1
                 entry['stats'] =  res_json['files'][TMP_F.name]
+
     def create_temp_file(self, fname, code):
         with open(fname, "w") as F:
             F.write(code)
@@ -140,14 +141,14 @@ class CFile(CodeFile):
         super().__init__(**args)
     @classmethod
     def preprocess(cls, name):
-        return
         with tempfile.NamedTemporaryFile(suffix = ".c") as TEMP:
             os.system(f'gcc -E "{name}" > {TEMP.name}')
             shutil.copyfile(TEMP.name, name)
+
     def create_temp_file(self, fname, code):
         with open(fname, "w") as F:
             F.write(code)
-        self.__class__.preprocess(fname)
+        #self.__class__.preprocess(fname)
 
 class HFile(CodeFile):
     __extension__ = "h"
