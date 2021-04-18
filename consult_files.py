@@ -8,6 +8,8 @@ import glob
 from collections import defaultdict
 import weakref
 import tabfun
+import statistics
+from utilities import *
 
 
 class KeepRefs(object):
@@ -213,6 +215,22 @@ class Table:
     def color_by(self, colors):
         self.colors = {self.headers.index(K): V for K, V in colors.items()}
 
+    def group_by(self, headers, aggreg):
+        tbl = {}
+        for row in self.rows:
+            grp = tuple(eval(re.sub(r'\w+', substitute(row), K)) for K in headers)
+            if grp not in tbl:
+                tbl[grp] = {}
+            for K, V in row.items():
+                tbl[grp][K] = tbl[grp].get(K, []) + [V]
+        res = Table()
+        for grp, grp_val in tbl.items():
+            row = {K: V for K, V in zip(headers, grp)}
+            for agg in aggreg:
+                row[agg] = eval(re.sub(r'\w+', substitute(grp_val), agg))
+            res.add_row(**row)
+        self.headers = res.headers
+        self.rows = res.rows
     def tabulate(self):
         return tabfun.tabfun([self.headers] + [[row[K] for K in self.headers] for row in self.rows],
                              funaval = self.colors)
@@ -246,6 +264,7 @@ else:
     T = Table()
     T.from_json("cached_results.json")
 
+
 def col_CC(x):
     if x < 10: return tabfun.GREEN
     if x < 20: return tabfun.ORANGE
@@ -263,11 +282,19 @@ def col_BP(x):
     if x < 0.1: return tabfun.YELLOW
     return tabfun.RED
 
+def iqm(values, pos = 2):
+    q = min(values), *statistics.quantiles(values), max(values)
+    return statistics.mean([x for x in values if q[pos - 1] <= x <= q[pos + 1]])
+
 T.transform('folder.replace("/home/rui/repos/","") name re.sub(r"^/tmp/tmp.*?/copy/","",filename) cyclomatic_complexity loc maintainability_index halstead_bugprop'.split())
 T.rename("folder name filename CC loc MI BP".split())
 T.sort("folder MI -CC -loc filename name".split())
-T.transform("folder name filename CC MI BP".split())
-T.color_by({'CC' : col_CC, 'MI' : col_MI, 'BP' : col_BP})
+#T.select("MI < 80 or CC > 10 or BP > 0.05")
+T.transform("folder name filename loc CC MI BP".split())
+#T.color_by({'CC' : col_CC, 'MI' : col_MI, 'BP' : col_BP})
 
+T.group_by("folder".split(), ["len(CC)", "round(100 * sum(x < 10 for x in CC)/len(CC),2)", "max(CC)",  "iqm(CC,3)", "round(100*sum(x > 80 for x in MI)/len(MI),2)", "min(MI)", "iqm(MI,1)"])
+T.rename(["folder", "tam", "good_CC", "wrst_CC", "iqm_CC", "good_MI", "wrst_MI", "iqm_MI"])
+T.color_by({'wrst_CC' : scale_lower(10,80), 'wrst_MI' : scale_upper(0, 80)})
 #T.select('folder == "MIEIPL2G01"')
 print(T.tabulate())
