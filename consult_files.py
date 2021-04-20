@@ -107,14 +107,14 @@ class CodeFile:
         res = []
         with open(self.filename) as F:
             lines = F.readlines()
-        list_files = subprocess.getoutput(f'echo | ctags -u --filter "{self.filename}"').splitlines()
-        funs = {ident for ident, filename, regexp, what, *where in (line.split('\t') for line in list_files) if what == "f" and not where}
+        #list_functions = subprocess.getoutput(f'ctags  -x -u "{self.filename}"').splitlines()
+        #funs = {ident for ident, filename, regexp, what, *where in (line.split('\t') for line in list_functions) if what == "f" and not where}
         lst = subprocess.getoutput(f"ctags -x -u {self.filename}").splitlines()
         line_numbers = []
         for line in lst:
             ident, what, lineno, filename, *rest = re.split(r'\s+', line)
             line_numbers.append(lineno)
-            if ident in funs:
+            if what == 'function':
                 res.append({'name': ident, 'filename': filename, 'lineno': lineno, 'definition': ' '.join(rest)})
         for n, entry in enumerate(res):
             fst, lst = int(entry['lineno']), int(res[n + 1]['lineno']) if n + 1 < len(res) else len(lines)
@@ -235,9 +235,9 @@ class Table:
             res.add_row(**row)
         self.headers = res.headers
         self.rows = res.rows
-    def tabulate(self):
+    def tabulate(self, format = None):
         return tabfun.tabfun([self.headers] + [[row[K] for K in self.headers] for row in self.rows],
-                             funaval = self.colors)
+                             funaval = self.colors, fmt = format)
 
     def from_json(self,  filename):
         with open(filename) as F:

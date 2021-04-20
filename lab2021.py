@@ -3,7 +3,7 @@ import re
 import statistics
 from consult_files import *
 
-if True:
+if False:
     T = None
     for folder in glob.glob("/home/rui/repos/LCC*") + glob.glob("/home/rui/repos/MIEI*"):
         if T is None:
@@ -44,13 +44,21 @@ T.transform('folder.replace("/home/rui/repos/","") name re.sub(r"^/tmp/tmp.*?/co
 T.rename("folder name filename CC loc MI BP".split())
 T.sort("folder MI -CC -loc filename name".split())
 #T.select("MI < 80 or CC > 10 or BP > 0.05")
-T.transform("folder name filename loc CC MI BP".split())
-#T.color_by({'CC' : col_CC, 'MI' : col_MI, 'BP' : col_BP})
+T.transform("folder name filename CC MI BP".split())
+T.color_by({'CC' : scale_lower(10,80), 'MI' : scale_upper(0, 80), 'BP' : scale_lower(0.05,0.1)})
+T.color_by({})
+
+with open("problemas.md", "w") as F:
+    print(T.tabulate(), file = F)
 
 T.group_by("folder".split(), ["len(CC)", "round(100 * sum(x < 10 for x in CC)/len(CC),2)", "max(CC)",  "iqm(CC,3)", "round(100*sum(x > 80 for x in MI)/len(MI),2)", "min(MI)", "iqm(MI,1)"])
 T.rename(["folder", "tam", "good_CC", "wrst_CC", "iqm_CC", "good_MI", "wrst_MI", "iqm_MI"])
-T.transform(["folder", "wrst_CC", "wrst_MI", "round(100 * scale_lower(10,80)(wrst_CC), 2)", "round(100 * scale_upper(10,80)(wrst_MI), 2)", "round(50 * (scale_lower(10,80)(wrst_CC) + scale_upper(10,80)(wrst_MI)), 2)"])
-T.rename(["folder", "CC", "MI", "grdCC", "grdMI", "nota"])
+T.transform(["folder", "wrst_CC", "iqm_CC", "wrst_MI", "iqm_MI", "round(100 * scale_lower(10,80)(wrst_CC), 2)", "round(100 * scale_upper(10,80)(wrst_MI), 2)"])
+T.rename(["Grupo", "CC", "qCC", "MI", "qMI", "grdCC", "grdMI"])
+T.transform(["Grupo", "CC", "MI"])
 T.color_by({'CC' : scale_lower(10,80), 'MI' : scale_upper(0, 80)})
+T.color_by({})
 #T.select('folder == "MIEIPL2G01"')
-print(T.tabulate())
+
+with open("aval_funcoes.csv", "w") as F:
+    print(re.sub(r'[ \t]+', ',', T.tabulate(format = "tsv")), file = F)
