@@ -3,7 +3,7 @@ import re
 import statistics
 from consult_files import *
 
-if False:
+if True:
     T = None
     for folder in glob.glob("/home/rui/repos/LCC*") + glob.glob("/home/rui/repos/MIEI*"):
         if T is None:
@@ -40,13 +40,12 @@ def iqm(values, pos = 2):
     return statistics.mean([x for x in values if q[pos - 1] <= x <= q[pos + 1]])
 
 T.add_to_environ(globals())
-T.transform('folder.replace("/home/rui/repos/","") name re.sub(r"^/tmp/tmp.*?/copy/","",filename) cyclomatic_complexity loc maintainability_index halstead_bugprop'.split())
+T.transform('folder.replace("/home/rui/repos/","") name re.sub(r"^/tmp/tmp.*?/copy/","",filename) cyclomatic_complexity loc round(maintainability_index,1) round(halstead_bugprop,3)'.split())
 T.rename("folder name filename CC loc MI BP".split())
 T.sort("folder MI -CC -loc filename name".split())
 #T.select("MI < 80 or CC > 10 or BP > 0.05")
 T.transform("folder name filename CC MI BP".split())
 T.color_by({'CC' : scale_lower(10,80), 'MI' : scale_upper(0, 80), 'BP' : scale_lower(0.05,0.1)})
-T.color_by({})
 
 with open("problemas.md", "w") as F:
     print(T.tabulate(), file = F)
