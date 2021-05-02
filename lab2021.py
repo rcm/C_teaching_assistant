@@ -6,7 +6,7 @@ from consult_files import *
 if True:
     T = None
     for folder in sorted(glob.glob("/home/rui/repos/LCC*") + glob.glob("/home/rui/repos/MIEI*")):
-        print(folder)
+        print("Parsing", folder)
         if T is None:
             T = CodeFolder(folder).create_function_table()
         else:

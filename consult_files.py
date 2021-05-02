@@ -127,7 +127,7 @@ class CodeFile:
                 self.create_temp_file(TMP_F.name, entry['definition'] + entry['code'])
                 res = subprocess.getoutput(f"multimetric {TMP_F.name}")
                 res_json = json.loads(res)
-                assert len(res_json['files']) == 1
+                assert len(res_json['files']) == 1, "Must be a single file"
                 entry['stats'] =  res_json['files'][TMP_F.name]
 
     def create_temp_file(self, fname, code):
