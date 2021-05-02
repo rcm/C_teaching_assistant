@@ -109,7 +109,7 @@ class CodeFile:
             lines = F.readlines()
         #list_functions = subprocess.getoutput(f'ctags  -x -u "{self.filename}"').splitlines()
         #funs = {ident for ident, filename, regexp, what, *where in (line.split('\t') for line in list_functions) if what == "f" and not where}
-        lst = subprocess.getoutput(f"ctags -x -u {self.filename}").splitlines()
+        lst = subprocess.getoutput(f'ctags -x -u "{self.filename}"').splitlines()
         line_numbers = []
         for line in lst:
             ident, what, lineno, filename, *rest = re.split(r'\s+', line)
@@ -124,7 +124,7 @@ class CodeFile:
     def get_multimetric(self):
         for entry in self.functions:
             with tempfile.NamedTemporaryFile(suffix = "." + self.__extension__) as TMP_F:
-                self.create_temp_file(TMP_F.name, entry['code'])
+                self.create_temp_file(TMP_F.name, entry['definition'] + entry['code'])
                 res = subprocess.getoutput(f"multimetric {TMP_F.name}")
                 res_json = json.loads(res)
                 assert len(res_json['files']) == 1
@@ -197,7 +197,7 @@ class Table:
         row_headers = [K for K in args.keys()]
         if self.headers is None:
             self.headers = row_headers
-        assert set(self.headers) == set(row_headers), f"Problem adding {args} to the table"
+        assert set(self.headers) == set(row_headers), f"Problem adding {args} to the table. Headers {self.headers} != {row_headers}"
         self.rows.append(args)
 
     def select(self, condition):
