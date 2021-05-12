@@ -129,6 +129,8 @@ class CodeFile:
                 res_json = json.loads(res)
                 assert len(res_json['files']) == 1, "Must be a single file"
                 entry['stats'] =  res_json['files'][TMP_F.name]
+                if not entry['stats']:
+                    entry['stats'] =  res_json['overall']
 
     def create_temp_file(self, fname, code):
         with open(fname, "w") as F:
@@ -197,7 +199,15 @@ class Table:
         row_headers = [K for K in args.keys()]
         if self.headers is None:
             self.headers = row_headers
-        assert set(self.headers) == set(row_headers), f"Problem adding {args} to the table. Headers {self.headers} != {row_headers}"
+        if set(self.headers) != set(row_headers):
+            print('#' * 60)
+            print(f"Problem adding {args} to the table. Headers {self.headers} != {row_headers}")
+            print('#' * 60)
+            for missing_header in self.headers:
+                if missing_header not in row_headers:
+                    args[missing_header] = None
+
+        #assert set(self.headers) == set(row_headers), f"Problem adding {args} to the table. Headers {self.headers} != {row_headers}"
         self.rows.append(args)
 
     def select(self, condition):
